@@ -595,20 +595,21 @@ function drawFirst(){
   const bare = `<div class="scene__base">${sceneBase({bare:true})}</div>`, full = `<div class="scene__base">${sceneBase()}</div>`;
   const L = LINES[firstDraft.personality];
   const views = [
-    () => firstFrame(bare, `<p class="first__h">작은 방이 하나 있어요</p><p class="sub">아직 아무것도 없어요</p><button type="button" class="primary" data-first="next">들어가 볼까요</button>`),
-    () => firstFrame(bare + firstActor(state.look, '여기… 있어도 되는 거야?', {shadow:true}), `<p class="first__h">누가 와 있어요</p><p class="sub">어디서 왔는지는 아직 몰라요</p><button type="button" class="primary" data-first="edit">어떤 모습인지 볼까요</button>`),
-    () => firstFrame(bare + firstActor(state.look, PERSONALITIES[firstDraft.personality].sample), `<p class="first__h">어떤 성격일까요?</p>
+    () => firstFrame(bare, `<p class="first__h" tabindex="-1" autofocus>작은 방이 하나 있어요</p><p class="sub">아직 아무것도 없어요</p><button type="button" class="primary" data-first="next">들어가 볼까요</button>`),
+    () => firstFrame(bare + firstActor(state.look, '여기… 있어도 되는 거야?', {shadow:true}), `<p class="first__h" tabindex="-1" autofocus>누가 와 있어요</p><p class="sub">어디서 왔는지는 아직 몰라요</p><button type="button" class="primary" data-first="edit">어떤 모습인지 볼까요</button>`),
+    () => firstFrame(bare + firstActor(state.look, PERSONALITIES[firstDraft.personality].sample), `<p class="first__h" tabindex="-1" autofocus>어떤 성격일까요?</p>
         <div class="chips">${Object.entries(PERSONALITIES).map(([k, p]) => `<button type="button" class="chip" data-pers="${k}" aria-pressed="${k === firstDraft.personality}">${p.label}</button>`).join('')}</div>
         <input class="field first__name" id="firstName" maxlength="12" placeholder="이름 (안 지어도 돼요)" aria-label="캐릭터 이름" value="${esc(firstDraft.name)}">
         <button type="button" class="primary" data-first="next">이렇게 할게요</button>`),
-    () => firstFrame(full + firstActor(state.look, ''), `<p class="first__h">방에 하나 둘까요?</p>
+    () => firstFrame(full + firstActor(state.look, ''), `<p class="first__h" tabindex="-1" autofocus>방에 하나 둘까요?</p>
         <div class="props-grid">${PROPS[0].kinds.map(([n, svg], i) => `<button type="button" class="pcard" data-kind="${i}" data-plant="${i}" aria-pressed="${i === firstDraft.plant}"><span class="pcard__img">${svg}</span><b>${n}</b></button>`).join('')}</div>
         <button type="button" class="primary" data-first="next">여기 둘게요</button>`),
-    () => firstFrame(full + firstActor(state.look, reply ?? (PERSONALITIES[firstDraft.personality].register === 'casual' ? '앞으로 여기서 같이 지내는 거야?' : '앞으로 여기서 같이 지내는 거예요?')), `<p class="first__h">오늘 어땠어요?</p>
+    () => firstFrame(full + firstActor(state.look, reply ?? (PERSONALITIES[firstDraft.personality].register === 'casual' ? '앞으로 여기서 같이 지내는 거야?' : '앞으로 여기서 같이 지내는 거예요?')), `<p class="first__h" tabindex="-1" autofocus>오늘 어땠어요?</p>
         <div class="moods">${MOODS.map(([k, label]) => `<button type="button" class="chip mood" data-fmood="${k}" aria-pressed="${todayRec().mood === k}">${label}</button>`).join('')}</div>
         <button type="button" class="primary" data-first="done">${todayRec().mood ? '같이 지내볼게요' : '나중에 할게요'}</button>`),
   ];
   $('firstBody').innerHTML = views[firstStep]();
+  $('firstBody').querySelector('.first__h').focus();   // 화면이 바뀌면 제목부터 읽히게
 }
 function commitFirst(){
   const name = $('firstName')?.value ?? firstDraft.name;

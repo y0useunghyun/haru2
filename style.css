@@ -233,6 +233,7 @@ dialog{background:var(--bg);border:2px solid var(--ink);border-bottom:0}
 .first__body .props-grid{margin-top:12px}
 .first__body .primary{margin:16px 0 0;width:100%}
 .first__name{margin-top:12px}
+.first__h:focus{outline:none}
 
 /* 캐릭터 페이지 */
 .me{display:flex;gap:16px;align-items:center;margin-top:16px}
