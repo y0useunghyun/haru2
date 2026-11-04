@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>하루 2</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="app">
+  <div class="hd">
+    <button class="deco" id="calBtn">기록</button>
+    <span class="hd__r"><button class="deco" id="roomBtn">방</button><button class="deco" id="charBtn">캐릭터</button></span>
+  </div>
+
+  <div class="scene" id="scene">
+    <div class="scene__base" id="sceneBase" aria-hidden="true"></div>
+    <div class="actor" id="actor">
+      <button class="char" id="char" aria-label="캐릭터 쓰다듬기"></button>
+      <span class="held" id="held" aria-hidden="true"></span>
+    </div>
+    <button class="note" id="note" aria-label="캐릭터가 남긴 쪽지" hidden></button>
+    <button class="bubble" id="bubble" aria-live="polite"></button>
+  </div>
+
+  <section class="panel" aria-labelledby="moodTitle">
+    <div class="panel__top"><p class="panel__q" id="moodTitle">오늘 어땠어요?</p><button class="panel__more" id="recBtn">잠·운동·식사 ›</button></div>
+    <div class="moods" id="moods"></div>
+  </section>
+</main>
+<p class="toast" id="toast" role="status" hidden></p>
+
+<dialog id="first" class="edit"><div class="edit__in" id="firstBody"></div></dialog>
+
+<dialog id="back"><form class="sheet" method="dialog">
+  <h2 id="backTitle"></h2>
+  <div class="back-face" id="backFace" aria-hidden="true"></div>
+  <p class="sec" style="margin-top:0">그동안</p>
+  <div id="backLog"></div>
+  <button class="primary" value="ok">같이 들어가기</button>
+</form></dialog>
+
+<dialog id="rec"><form class="sheet" method="dialog">
+  <h2>오늘 남기기</h2>
+  <p class="sec" style="margin-top:0">잠</p>
+  <div class="chips" id="recSleep"></div>
+  <p class="sec" style="margin-top:20px">운동</p>
+  <div class="chips" id="recMove"></div>
+  <p class="sec" style="margin-top:20px">식사</p>
+  <div class="chips" id="recMeal"></div>
+  <button type="button" class="chip chip--rest" id="recRest">오늘은 아무것도 안 했어요</button>
+  <button class="primary" value="ok">다 했어요</button>
+</form></dialog>
+
+<dialog id="sleep"><form class="sheet" method="dialog">
+  <h2>어젯밤 몇 시간 잤어요?</h2>
+  <div class="stepper">
+    <button type="button" data-step="-0.5" aria-label="30분 빼기">−</button>
+    <span class="stepper__v" id="sleepStep"></span>
+    <button type="button" data-step="0.5" aria-label="30분 더하기">+</button>
+  </div>
+  <button class="primary" value="ok">저장</button>
+</form></dialog>
+
+<dialog id="move"><form class="sheet" method="dialog">
+  <h2>어떤 운동 했어요?</h2>
+  <div class="chips" id="moveTypes" style="margin-top:0"></div>
+  <div class="stepper" style="margin-top:16px">
+    <button type="button" data-mstep="-10" aria-label="10분 빼기">−</button>
+    <span class="stepper__v" id="moveStep"></span>
+    <button type="button" data-mstep="10" aria-label="10분 더하기">+</button>
+  </div>
+  <button class="primary" value="ok">저장</button>
+</form></dialog>
+
+<dialog id="movePage" class="edit"><form method="dialog" class="edit__in">
+  <div class="page__top"><button class="back" value="" aria-label="뒤로">‹</button><h2 tabindex="-1" autofocus>운동</h2></div>
+  <div class="page__body" id="movePageBody"></div>
+  <button type="button" class="primary" id="addMove">운동 추가</button>
+</form></dialog>
+
+<dialog id="nutriPage" class="edit"><form method="dialog" class="edit__in">
+  <div class="page__top"><button class="back" value="" aria-label="뒤로">‹</button><h2 tabindex="-1" autofocus>영양</h2></div>
+  <div class="page__body" id="nutriPageBody"></div>
+  <button type="button" class="primary" id="addMeal">식사 기록하기</button>
+</form>
+  <div id="howScore" popover class="pop">
+    <h3>영양 점수는 이렇게 매겨요</h3>
+    <p>음식마다 단백질·탄수화물·채소를 0~2로 쳐요. 닭가슴살은 단백질 2, 밥은 탄수화물 2, 비빔밥은 셋 다 조금씩.</p>
+    <p>세 가지를 각각 하루 목표만큼 채운 비율을 내고, 그 평균이 점수예요. 목표보다 많이 먹은 건 100%로 쳐요.</p>
+    <p>운동을 60분 넘게 하거나 근력 운동을 한 날엔 단백질 목표가 1 늘어요.</p>
+    <button type="button" class="primary" popovertarget="howScore" popovertargetaction="hide">알겠어요</button>
+  </div>
+</dialog>
+
+<dialog id="calPage" class="edit"><form method="dialog" class="edit__in">
+  <div class="page__top"><button class="back" value="" aria-label="뒤로">‹</button><h2 tabindex="-1" autofocus>기록</h2></div>
+  <div class="page__body" id="calBody"></div>
+</form></dialog>
+
+<dialog id="roomPage" class="edit"><form method="dialog" class="edit__in">
+  <div class="page__top"><button class="back" value="" aria-label="뒤로">‹</button><h2 tabindex="-1" autofocus>방 꾸미기</h2></div>
+  <div class="scene scene--mini" id="roomPreview" aria-hidden="true"></div>
+  <div class="page__body" id="roomBody"></div>
+</form></dialog>
+
+<dialog id="charPage" class="edit"><form method="dialog" class="edit__in">
+  <div class="page__top"><button class="back" value="" aria-label="뒤로">‹</button><h2 tabindex="-1" autofocus>캐릭터</h2></div>
+  <div class="page__body" id="charBody"></div>
+</form></dialog>
+
+<dialog id="propSheet"><form class="sheet" method="dialog">
+  <h2 id="propTitle"></h2>
+  <div class="props-grid props-grid--4" id="propKinds" style="margin-top:0"></div>
+</form></dialog>
+
+<dialog id="goals"><form class="sheet" method="dialog">
+  <h2 tabindex="-1" autofocus>하루 목표를 정해요</h2>
+  <p class="sec" style="margin-top:0">하루에 몇 끼 먹어요?</p>
+  <div class="chips" id="goalMeals"></div>
+  <p class="sec" style="margin-top:20px">요즘 목표는?</p>
+  <div class="chips" id="goalAim"></div>
+  <p class="sub" id="goalSum" style="margin-top:16px"></p>
+  <button class="primary" value="ok">저장</button>
+</form></dialog>
+
+<dialog id="meal"><form class="sheet" method="dialog">
+  <h2>뭐 먹었어요?</h2>
+  <div class="chips" id="whenChips" style="margin:0 0 12px"></div>
+  <input class="field" id="mealInput" placeholder="예: 닭가슴살 밥" autocomplete="off" maxlength="40" aria-label="먹은 음식">
+  <div class="chips" id="mealChips"></div>
+  <button class="primary" value="ok" id="mealSave" disabled>기록</button>
+  <button class="link del-meal" value="del" id="mealDel" hidden>이 기록 지우기</button>
+</form></dialog>
+
+<dialog id="edit" class="edit"><form method="dialog" class="edit__in">
+  <div class="edit__top"><h2 id="editTitle" tabindex="-1" autofocus></h2><button type="button" class="text-btn" id="rand">랜덤</button></div>
+  <div class="preview" id="preview"></div>
+  <div class="tabs" id="tabs" role="tablist"></div>
+  <div class="opts" id="opts"></div>
+  <button class="primary" value="ok">이렇게 할게요</button>
+</form></dialog>
+
+<script src="data.js"></script>
+<script src="life.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
