@@ -14,12 +14,7 @@ const TODAY = iso(dayNow());
 const KEY = 'haru2';
 const EMPTY_DAY = {mood:null, rest:false, sleep:null, moves:[], meals:[]};
 
-// ── 저장 형식 검사: 저장값과 불러온 파일 모두 여기를 지난다 ──
-const inRange = (v, n) => Number.isInteger(v) && v >= 0 && v < n;
-const partSize = p => p.colors ? p.colors.length : p.n;
-function cleanLook(raw){
-  return Object.fromEntries(PARTS.map(p => [p.k, inRange(raw?.[p.k], partSize(p)) ? raw[p.k] : DEFAULT_LOOK[p.k]]));
-}
+// ── 저장 형식 검사: 저장값과 불러온 파일 모두 여기를 지난다 (공용 검사는 life.js) ──
 function cleanDay(d){
   const mood = MOODS.some(([k]) => k === d?.mood) ? d.mood : null;
   const sleep = typeof d?.sleep === 'number' && d.sleep >= 0 && d.sleep <= 14 ? d.sleep : null;
@@ -28,12 +23,26 @@ function cleanDay(d){
   return {mood, rest:d?.rest === true, sleep, moves, meals, ...(d?.goals ? {goals:cleanGoals(d.goals)} : {})};
 }
 const cleanGoals = g => ({meals:MEAL_COUNTS.includes(g?.meals) ? g.meals : DEFAULT_GOALS.meals, aim:inRange(g?.aim, AIMS.length) ? g.aim : DEFAULT_GOALS.aim});
-const isDateKey = k => /^\d{4}-\d{2}-\d{2}$/.test(k) && !isNaN(Date.parse(k));
+// v1 → v2: 칸 단위로 열리던 소품을 종류 단위로. 그때 열려 있던 칸은 3종 모두 가진 걸로 옮긴다
+function oldGot(raw, days){
+  if (raw.v !== 1 || !isDateKey(raw.born)) return [];
+  const n = together({born:raw.born, visitDays:Number.isInteger(raw.visitDays) ? raw.visitDays : 1, days}, TODAY);
+  return PROPS.filter(p => n >= (OLD_NEED[p.id] ?? Infinity)).flatMap(p => p.kinds.map((_, k) => `${p.id}:${k}`));
+}
+const cleanList = (raw, max, fn) => (Array.isArray(raw) ? raw : []).map(fn).filter(Boolean).slice(-max);
+// 친구는 받은 코드 그대로 저장하고, 읽을 때마다 같은 검사를 지난다
+function cleanFriend(f){ const r = readCode(f?.code); return r?.type === 'room' && isDateKey(f.at) ? {code:f.code, at:f.at, room:r.data} : null; }
+function cleanMail(m){
+  if (!Number.isInteger(m?.id) || !isDateKey(m.date) || !inRange(m.greet, GREETS.length)) return null;
+  return {id:m.id, from:cleanName(m.from, '친구'), greet:m.greet, item:ALL_ITEMS.includes(m.item) ? m.item : null, date:m.date};
+}
 function normalize(raw){
+  const days = Object.fromEntries(Object.entries(raw.days && typeof raw.days === 'object' ? raw.days : {}).filter(([k]) => isDateKey(k)).map(([k, d]) => [k, cleanDay(d)]));
+  const got = [...new Set([...(Array.isArray(raw.got) ? raw.got.filter(k => ALL_ITEMS.includes(k)) : []), ...oldGot(raw, days)])];
   return {
-    v:1,
+    v:2,
     seed:Number.isInteger(raw.seed) ? raw.seed : Math.floor(Math.random()*1e9),
-    name:typeof raw.name === 'string' && raw.name.trim() ? raw.name.trim().slice(0, 12) : '하루',
+    name:cleanName(raw.name, '하루'),
     personality:PERSONALITIES[raw.personality] ? raw.personality : 'calm',
     born:isDateKey(raw.born) ? raw.born : TODAY,
     lastVisit:isDateKey(raw.lastVisit) ? raw.lastVisit : TODAY,
@@ -43,9 +52,14 @@ function normalize(raw){
     look:cleanLook(raw.look),
     goals:cleanGoals(raw.goals),
     hiddenProps:Array.isArray(raw.hiddenProps) ? raw.hiddenProps.filter(id => PROPS.some(p => p.id === id)) : [],
-    propKinds:Object.fromEntries(PROPS.filter(p => inRange(raw.propKinds?.[p.id], p.kinds.length)).map(p => [p.id, raw.propKinds[p.id]])),
-    seenProps:Number.isInteger(raw.seenProps) ? raw.seenProps : 0,
-    days:Object.fromEntries(Object.entries(raw.days && typeof raw.days === 'object' ? raw.days : {}).filter(([k]) => isDateKey(k)).map(([k, d]) => [k, cleanDay(d)])),
+    propKinds:cleanKinds(raw.propKinds),
+    got,
+    seenItems:Number.isInteger(raw.seenItems) ? raw.seenItems : raw.v === 1 ? -1 : 0,   // -1 = 예전 저장값, 지금 가진 걸 이미 본 걸로
+    interests:cleanList(raw.interests, MAX_INTERESTS, x => INTERESTS[x?.id] && isDateKey(x.on) ? {id:x.id, on:x.on} : null),
+    friends:cleanList(raw.friends, 30, cleanFriend),
+    mail:cleanList(raw.mail, 100, cleanMail),
+    shopDay:isDateKey(raw.shopDay) ? raw.shopDay : null,
+    days,
   };
 }
 function loadSaved(){
@@ -53,9 +67,12 @@ function loadSaved(){
   try { const raw = JSON.parse(localStorage.getItem(KEY)); return raw && typeof raw === 'object' ? raw : null; }
   catch (err){ console.warn('저장된 기록을 읽지 못함', err); return null; }
 }
-function showToast(text){
-  $('toast').textContent = text; $('toast').hidden = false;
-  clearTimeout(showToast.t); showToast.t = setTimeout(() => { $('toast').hidden = true; }, 5000);
+// undo 가 있으면 「되돌리기」 버튼을 같이 보여준다
+function showToast(text, undo = null){
+  $('toastText').textContent = text; $('toast').hidden = false;
+  $('toastUndo').hidden = !undo;
+  $('toastUndo').onclick = () => { $('toast').hidden = true; undo?.(); };
+  clearTimeout(showToast.t); showToast.t = setTimeout(() => { $('toast').hidden = true; }, undo ? 7000 : 5000);
 }
 function save(){
   if (NO_SAVE) return;
@@ -73,7 +90,7 @@ function demoState(){
     const moves = r() < .5 ? [{type:types[Math.floor(r()*types.length)], min:[20,30,40,60][Math.floor(r()*4)]}] : [];
     return [addDays(TODAY, -i), {mood:MOODS[Math.floor(r()*3)][0], rest:false, sleep:[5,5.5,6,6.5,7,7.5,8][Math.floor(r()*7)], moves, meals, goals:DEFAULT_GOALS}];
   }));
-  return normalize({seed:2026, name:'콩이', personality:params.get('p') ?? 'curious', born, lastVisit:TODAY, visitDays:30, met:true, seenProps:PROPS.length,
+  return normalize({seed:2026, name:'콩이', personality:params.get('p') ?? 'curious', born, lastVisit:TODAY, visitDays:30, met:true, seenItems:-1, got:ALL_ITEMS.filter((_, i) => i % 4),
     days:{...days, [TODAY]:{mood:'good', sleep:7, moves:[{type:'달리기', min:30}], meals:[{when:'아침', name:'계란 샌드위치'}, {when:'점심', name:'비빔밥'}]}}});
 }
 
@@ -85,6 +102,7 @@ if (AWAY){
   const n = Math.max(1, parseInt(params.get('away'), 10) || 3);
   state = {...state, met:true, lastVisit:addDays(TODAY, -n), born:state.met ? state.born : addDays(TODAY, -(n + 10))};
 }
+state = {...state, interests:growInterests(state, TODAY)};
 const gapDays = daysBetween(state.lastVisit, TODAY);
 const awayEntries = state.met && gapDays >= 2 ? awayLog(state, state.lastVisit, TODAY) : [];
 const markVisit = s => ({...s, lastVisit:TODAY, visits:[...new Set([...s.visits, TODAY])].sort()});
@@ -100,12 +118,7 @@ function setToday(patch){
 const lines = () => LINES[state.personality];
 const pastLines = () => PAST[PERSONALITIES[state.personality].register];
 
-// ── 점수 (v3 로직 유지) ──
-const hits = name => name.split(/\s+/).flatMap(w => {
-  const found = [];
-  for (const k of FOOD_KEYS) while (w.includes(k)) { found.push(k); w = w.replace(k, ' '); }
-  return found;
-});
+// ── 점수 (v3 로직 유지. hits 는 life.js) ──
 const scoreFood = name => hits(name).reduce((s, k) => s.map((v, i) => v + FOOD[k][0][i]), [0,0,0]);
 const moveMinOf = moves => moves.reduce((a, m) => a + m.min, 0);
 const proteinUpOf = moves => moveMinOf(moves) >= 60 || moves.some(m => m.type === '근력');
@@ -134,16 +147,26 @@ async function loadWeather(){
     render();
   } catch (err){ console.warn('날씨를 받지 못해 시간대만 반영', err); }   // 창문은 맑은 하늘로 유지
 }
-const unlocked = () => { const n = together(state, TODAY); return PROPS.filter(p => n >= p.need); };
-const kindOf = p => p.kinds[state.propKinds[p.id] ?? 0];
-function sceneBase({bare = false} = {}){
-  const time = timeOf(hourNow());
-  const shown = bare ? [] : unlocked().filter(p => p.id !== 'window' && !state.hiddenProps.includes(p.id));
-  return `<div class="plane plane--wall" data-time="${time}"></div><div class="plane plane--floor" data-time="${time}"></div>
-    <span class="fx fx--window">${windowArt(state.propKinds.window ?? 0, time, weather)}</span>
+const owned = () => ownedItems(state, TODAY);
+const ownedKinds = p => { const o = owned(); return p.kinds.map((_, k) => k).filter(k => o.has(`${p.id}:${k}`)); };
+// 방에 놓인 것: 칸 → 종류. 고른 종류가 없으면 가진 것 중 첫 번째. 친구 코드에도 이 값이 들어간다
+function myKinds(){
+  return Object.fromEntries(PROPS.flatMap(p => {
+    const ks = ownedKinds(p), pick = ks.includes(state.propKinds[p.id]) ? state.propKinds[p.id] : ks[0];
+    return ks.length && (p.id === 'window' || !state.hiddenProps.includes(p.id)) ? [[p.id, pick]] : [];
+  }));
+}
+// 벽지·바닥은 무늬 칸, 나머지는 그림
+const kindArt = (p, k) => p.layer === 'plane' ? `<span class="pat" style="${p.kinds[k][2]}"></span>` : p.kinds[k][1];
+function sceneBase({bare = false, kinds = myKinds()} = {}){
+  const time = timeOf(hourNow()), on = bare ? {} : kinds;
+  const plane = id => on[id] != null ? ` style="${PROPS.find(p => p.id === id).kinds[on[id]][2]}"` : '';
+  const shown = PROPS.filter(p => on[p.id] != null && p.layer !== 'plane' && p.id !== 'window');
+  return `<div class="plane plane--wall" data-time="${time}"${plane('wallpaper')}></div><div class="plane plane--floor" data-time="${time}"${plane('floor')}></div>
+    <span class="fx fx--window">${windowArt(kinds.window ?? 0, time, weather)}</span>
     ${bare ? '' : `<span class="fx fx--bed">${BED}</span><span class="fx fx--desk">${DESK}</span>`}
-    ${shown.map(p => `<span class="fx fx--${p.id}">${kindOf(p)[1]}</span>`).join('')}
-    <div class="night" data-time="${time}" data-lamp="${shown.some(p => p.id === 'lamp')}"></div>`;
+    ${shown.map(p => `<span class="fx fx--${p.id}">${p.kinds[on[p.id]][1]}</span>`).join('')}
+    <div class="night" data-time="${time}" data-lamp="${on.lamp != null}"></div>`;
 }
 
 // ── 캐릭터 생활 ──
@@ -169,7 +192,7 @@ function statusLine(){
 function speech(act){
   const L = lines();
   if (poke) return {t:poke};
-  if (newProp) return {t:`방에 ${josa(newProp, '이가')} 생겼어요!`};
+  if (newProp) return {t:newProp};
   if (reply) return {t:reply};
   if (!greeted){
     if (state.visitDays <= 2 && !hasRecord(todayRec())) return {t:pick(L.shy)};
@@ -187,7 +210,7 @@ function say(text, ms = 3500){
 
 let lastSceneKey = '', lastCharKey = '', currentGo = null;
 function drawScene(){
-  const key = JSON.stringify([timeOf(hourNow()), weather, unlocked().length, state.hiddenProps, state.propKinds]);
+  const key = JSON.stringify([timeOf(hourNow()), weather, myKinds()]);
   if (key !== lastSceneKey){ $('sceneBase').innerHTML = sceneBase(); lastSceneKey = key; }
 }
 function drawActor(act){
@@ -212,16 +235,27 @@ function drawActor(act){
   $('held').innerHTML = heldArt(info.held);
   if (!$('note').innerHTML) $('note').innerHTML = NOTE;
 }
+// 새로 생긴 소품 알리기. 칸이 처음 채워지면 방에 바로 놓이고, 이미 있던 칸이면 방 꾸미기에서 바꿀 수 있다
+function announceItem(key){
+  const {p} = itemOf(key), first = ownedKinds(p).length === 1;
+  newProp = first ? `방에 ${josa(p.name, '이가')} 생겼어요!` : `새 ${josa(p.name, '이가')} 생겼어요! 방 꾸미기에서 바꿔 봐요`;
+  clearTimeout(propTimer);
+  propTimer = setTimeout(() => { newProp = null; render(); }, 4000);
+}
+// 시간이 지나 생긴 것. 가게·선물로 받은 건 gainItem 이 바로 알린다
 function checkNewProp(){
-  const n = unlocked().length;
-  if (n > state.seenProps){
-    const added = unlocked().filter(p => p.id !== 'window').at(-1);
-    state = {...state, seenProps:n};
-    if (added && state.met){
-      newProp = added.name; clearTimeout(propTimer);
-      propTimer = setTimeout(() => { newProp = null; render(); }, 3500);
-    }
-  }
+  const n = owned().size;
+  if (state.seenItems < 0 || !state.met){ if (state.seenItems !== n) state = {...state, seenItems:n}; return; }
+  if (n <= state.seenItems) return;
+  state = {...state, seenItems:n};
+  announceItem(ITEM_ORDER[Math.min(ITEM_ORDER.length, Math.floor(together(state, TODAY)/ITEM_STEP) + 1) - 1]);
+}
+function gainItem(key){
+  if (owned().has(key)) return false;
+  state = {...state, got:[...state.got, key]};
+  state = {...state, seenItems:owned().size};
+  announceItem(key);
+  return true;
 }
 function drawPanel(){
   const d = todayRec();
@@ -235,7 +269,7 @@ function render(){
   currentGo = s.go ?? null;
   $('bubble').textContent = s.t;
   $('bubble').classList.toggle('is-link', !!s.go);
-  ['movePage','nutriPage','roomPage','charPage'].forEach(id => { if ($(id).open) PAGES[id](); });
+  Object.keys(PAGES).forEach(id => { if ($(id).open) PAGES[id](); });
   if ($('rec').open) drawRec();
   save();
 }
@@ -247,7 +281,7 @@ $('char').onclick = () => {
   clearTimeout(pokeTimer); pokeTimer = setTimeout(() => { poke = null; talk++; render(); }, 2000);
 };
 $('bubble').onclick = () => { if (currentGo === 'meal') openMeal(-1); else { talk++; render(); } };
-$('note').onclick = () => { doFor('wander', 30000); say(pick(lines().poke)); render(); hop(); };
+$('note').onclick = () => openPark();   // 쪽지 = 공원에 나가 있어요 → 공원에서 만남 (town.js)
 $('moods').onclick = e => {
   const b = e.target.closest('[data-mood]'); if (!b) return;
   const k = b.dataset.mood, off = todayRec().mood === k;
@@ -256,6 +290,39 @@ $('moods').onclick = e => {
   render(); if (!off) hop();
 };
 setInterval(() => { greeted = true; talk++; tick = Math.floor(Date.now()/60000); if (Date.now() >= overrideUntil) override = null; render(); }, 15000);
+
+// ── 한 줄 입력: 「점심에 김밥, 30분 걸었어」 → 잠·운동·식사·기분으로 나눠 남긴다 ──
+const register = () => PERSONALITIES[state.personality].register;
+const summary = r => [
+  ...(r.mood ? [MOODS.find(([k]) => k === r.mood)[1]] : []), ...(r.rest ? ['아무것도 안 한 날'] : []),
+  ...(r.sleep != null ? [`잠 ${r.sleep}시간`] : []), ...r.moves.map(m => `${m.type} ${m.min}분`), ...r.meals.map(m => `${m.when} ${m.name}`),
+].join(' · ');
+// 기록 전후를 비교해 캐릭터가 차례로 대답 (시트·한 줄 입력 공용)
+function reactAfter(before, after, first = []){
+  reactionTimers.forEach(clearTimeout);
+  const list = [...first, ...reactionsAfterRecord(before, after, state.personality)];
+  reactionTimers = list.map((r, i) => setTimeout(() => playReaction(r), i*REACTION_GAP_MS));
+}
+$('sayForm').onsubmit = e => {
+  e.preventDefault();
+  const text = $('sayInput').value.trim(); if (!text) return;
+  const r = parseRecord(text, guessWhen());
+  if (isEmptyParse(r)){ say(WHAT[register()], 5000); render(); hop(); return; }
+  const before = todayRec(), L = lines();
+  setToday({
+    ...(r.mood ? {mood:r.mood} : {}), ...(r.rest ? {rest:true} : {}), ...(r.sleep != null ? {sleep:r.sleep} : {}),
+    moves:[...before.moves, ...r.moves], meals:[...before.meals, ...r.meals],
+  });
+  $('sayInput').value = '';
+  const t = today(), food = r.meals.flatMap(m => hits(m.name));
+  const first = [
+    ...(r.mood && r.mood !== before.mood ? [{t:pick(L.mood[r.mood])}] : []),
+    ...(r.meals.length ? [{t:pick(L.ate) + (!food.length ? L.unknown : t.lack < 0 ? pick(L.full) : pick(L.crave[t.lack]))}] : []),
+  ];
+  reactAfter(before, todayRec(), first);
+  showToast(`남겼어요 · ${summary(r)}`, () => { setToday(before); render(); });
+  render();
+};
 
 // ── 기록 시트 (2단계). 칩으로 고르고, 자세히는 3단계로 ──
 const REACTION_GAP_MS = 3600;
@@ -298,10 +365,8 @@ function playReaction(r){
   if (r.gesture === 'reach'){ el.classList.remove('reach'); void el.offsetWidth; el.classList.add('reach'); }
 }
 $('rec').onclose = () => {
-  reactionTimers.forEach(clearTimeout);
-  const list = [...(ateLine ? [{t:ateLine}] : []), ...reactionsAfterRecord(recBefore, todayRec(), state.personality)];
+  reactAfter(recBefore, todayRec(), ateLine ? [{t:ateLine}] : []);
   ateLine = null;
-  reactionTimers = list.map((r, i) => setTimeout(() => playReaction(r), i*REACTION_GAP_MS));
 };
 $('rec').addEventListener('click', e => {
   const sq = e.target.closest('[data-sq]');
@@ -500,19 +565,21 @@ $('calBody').onclick = e => {
 // ── 방 꾸미기 ──
 function drawRoomPage(){
   $('roomPreview').innerHTML = `<div class="scene__base">${sceneBase()}</div><div class="actor actor--static" style="--x:50;--y:88"><div class="char">${avatar(state.look, {shadow:false})}</div></div>`;
-  const open = unlocked();
+  const on = myKinds();
   $('roomBody').innerHTML = `
-    <p class="sub">함께 지내다 보면 소품이 하나씩 생겨요</p>
-    <div class="props-grid">${PROPS.map(p => { const isOpen = open.includes(p), on = isOpen && !state.hiddenProps.includes(p.id);
-      return `<button type="button" class="pcard ${isOpen ? '' : 'is-locked'}" data-prop="${p.id}" ${isOpen ? `aria-pressed="${on}"` : 'disabled'}>
-        <span class="pcard__img">${kindOf(p)[1]}</span><b>${p.name}</b>
-        <span class="pcard__st">${isOpen ? (on ? kindOf(p)[0] : '빼 뒀어요') : '아직 없어요'}</span></button>`; }).join('')}</div>`;
+    <p class="sub">함께 지내다 보면, 가게에 들르면, 친구가 보내 주면 소품이 생겨요</p>
+    <div class="props-grid">${PROPS.map(p => { const ks = ownedKinds(p), k = on[p.id];
+      return `<button type="button" class="pcard ${ks.length ? '' : 'is-locked'}" data-prop="${p.id}" ${ks.length ? `aria-pressed="${k != null}"` : 'disabled'}>
+        <span class="pcard__img">${kindArt(p, k ?? ks[0] ?? 0)}</span><b>${p.name}</b>
+        <span class="pcard__st">${!ks.length ? '아직 없어요' : k == null ? '빼 뒀어요' : `${p.kinds[k][0]} · ${ks.length}/${p.kinds.length}`}</span></button>`; }).join('')}</div>`;
 }
 let propSel = null;
 function drawPropSheet(){
-  const p = PROPS.find(x => x.id === propSel), hidden = state.hiddenProps.includes(p.id), k = hidden ? -1 : (state.propKinds[p.id] ?? 0);
+  const p = PROPS.find(x => x.id === propSel), k = myKinds()[p.id] ?? -1, ks = ownedKinds(p);
   $('propTitle').textContent = p.name;
-  $('propKinds').innerHTML = p.kinds.map(([name, svg], i) => `<button type="button" class="pcard" data-kind="${i}" aria-pressed="${i === k}"><span class="pcard__img">${svg}</span><b>${name}</b></button>`).join('')
+  $('propKinds').innerHTML = p.kinds.map(([name], i) => ks.includes(i)
+      ? `<button type="button" class="pcard" data-kind="${i}" aria-pressed="${i === k}"><span class="pcard__img">${kindArt(p, i)}</span><b>${name}</b></button>`
+      : `<button type="button" class="pcard is-locked" disabled><span class="pcard__img">${kindArt(p, i)}</span><b>아직 없어요</b></button>`).join('')
     + (p.id === 'window' ? '' : `<button type="button" class="pcard" data-kind="-1" aria-pressed="${k === -1}"><span class="pcard__none">–</span><b>없음</b></button>`);
 }
 $('roomBtn').onclick = () => { drawRoomPage(); $('roomPage').showModal(); };
@@ -525,13 +592,15 @@ $('propKinds').onclick = e => { const b = e.target.closest('[data-kind]'); if (!
 
 // ── 캐릭터 페이지: 알아가는 곳 + 백업 ──
 function memoriesOf(){
-  const ints = interestsOn(state, TODAY);
   const fmt = key => { const [, m, d] = key.split('-').map(Number); return `${m}월 ${d}일`; };
   const firstRec = Object.keys(state.days).sort()[0];
+  const firstGift = new Map([...state.mail].reverse().map(m => [m.from, m.date]));   // 친구마다 처음 받은 날
   return [
     [state.born, '처음 만난 날'],
     ...(firstRec ? [[firstRec, '하루를 처음 나눈 날']] : []),
-    ...ints.slice(1).map((id, i) => [addDays(state.born, (i + 1)*DAYS_PER_INTEREST), `${INTERESTS[id].label}에 관심이 생긴 날`]),
+    ...state.interests.slice(1).filter(x => x.on <= TODAY).map(x => [x.on, `${INTERESTS[x.id].label}에 관심이 생긴 날`]),
+    ...state.friends.map(f => [f.at, `${esc(f.room.name)}네 방에 처음 놀러 간 날`]),
+    ...[...firstGift].map(([from, d]) => [d, `${esc(from)}에게 인사를 받은 날`]),
   ].sort((a, b) => b[0].localeCompare(a[0])).map(([k, t]) => [fmt(k), t]);
 }
 function drawCharPage(){
@@ -541,6 +610,7 @@ function drawCharPage(){
       <div class="me__t"><label class="me__label" for="nameInput">이름</label><input class="field" id="nameInput" maxlength="12" value="${esc(state.name)}"><p class="sub">${P_.label}</p></div></div>
     <p class="sec">요즘 좋아하는 것</p>
     <div class="chips">${interestsOn(state, TODAY).map(id => `<span class="tag">${INTERESTS[id].label}</span>`).join('')}</div>
+    <p class="sub" style="margin-top:8px">소품 ${owned().size} / ${ALL_ITEMS.length}</p>
     <p class="sec">기억</p>
     ${memoriesOf().map(([d, t]) => `<div class="row"><div class="row__h"><span>${t}</span><span class="num">${d}</span></div></div>`).join('')}
     <p class="sec">설정</p>
@@ -569,9 +639,10 @@ async function importData(file){
   if (!file) return;
   try {
     const raw = JSON.parse(await file.text());
-    if (raw?.v !== 1 || typeof raw.days !== 'object' || raw.days === null) throw new Error('하루 2 기록 파일이 아님');
+    if (![1, 2].includes(raw?.v) || typeof raw.days !== 'object' || raw.days === null) throw new Error('하루 2 기록 파일이 아님');
     if (!confirm('지금 기록을 이 파일 내용으로 바꿀까요?')) return;
-    state = markVisit(normalize(raw));
+    const next = markVisit(normalize(raw));
+    state = {...next, interests:growInterests(next, TODAY)};
     render(); drawCharPage(); showToast('기록을 불러왔어요');
   } catch (err){
     console.warn('기록 불러오기 실패', err);
@@ -615,13 +686,14 @@ function commitFirst(){
   const name = $('firstName')?.value ?? firstDraft.name;
   firstDraft = {...firstDraft, name};
   state = {...state, personality:firstDraft.personality, name:name.trim().slice(0, 12) || '하루',
-    propKinds:{...state.propKinds, plant:firstDraft.plant}};
+    propKinds:{...state.propKinds, plant:firstDraft.plant}, got:[...state.got.filter(k => !k.startsWith('plant:')), `plant:${firstDraft.plant}`]};
 }
 function endFirst(){
   commitFirst(); reply = null;
-  state = {...state, met:true, seenProps:unlocked().length};
+  state = {...state, met:true, seenItems:owned().size};
   if ($('first').open) $('first').close();
   render();
+  homeReady();
 }
 $('firstBody').addEventListener('click', e => {
   const act = e.target.closest('[data-first]')?.dataset.first;
@@ -648,7 +720,9 @@ function openBack(){
   }).join('');
   $('back').returnValue = ''; $('back').showModal();
 }
-$('back').onclose = () => { greeted = false; render(); hop(); };
+$('back').onclose = () => { greeted = false; render(); hop(); homeReady(); };
+// 홈이 보일 때 한 번: 받은 친구 코드 처리 등 (town.js 가 듣는다)
+const homeReady = () => document.dispatchEvent(new Event('haru:ready'));
 
 // ── 공통 시트 동작 ──
 document.querySelectorAll('dialog').forEach(d => {
@@ -664,7 +738,11 @@ const checkDay = () => { if (iso(dayNow()) !== TODAY) location.reload(); };
 document.addEventListener('visibilitychange', () => { if (!document.hidden) checkDay(); });
 setInterval(checkDay, 60000);
 
-render();
-loadWeather();
-if (!state.met){ drawFirst(); $('first').showModal(); }
-else if (awayEntries.length) openBack();
+// 시작은 town.js 를 불러온 뒤 (공원·친구 코드가 거기 있음)
+function start(){
+  render();
+  loadWeather();
+  if (!state.met){ drawFirst(); $('first').showModal(); }
+  else if (awayEntries.length) openBack();
+  else homeReady();
+}

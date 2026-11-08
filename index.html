@@ -13,7 +13,7 @@
 <main class="app">
   <div class="hd">
     <button class="deco" id="calBtn">기록</button>
-    <span class="hd__r"><button class="deco" id="roomBtn">방</button><button class="deco" id="charBtn">캐릭터</button></span>
+    <span class="hd__r"><button class="deco" id="townBtn">마을</button><button class="deco" id="roomBtn">방</button><button class="deco" id="charBtn">캐릭터</button></span>
   </div>
 
   <div class="scene" id="scene">
@@ -29,9 +29,13 @@
   <section class="panel" aria-labelledby="moodTitle">
     <div class="panel__top"><p class="panel__q" id="moodTitle">오늘 어땠어요?</p><button class="panel__more" id="recBtn">잠·운동·식사 ›</button></div>
     <div class="moods" id="moods"></div>
+    <form class="say" id="sayForm" autocomplete="off">
+      <input class="field say__in" id="sayInput" maxlength="120" enterkeyhint="send" placeholder="예: 점심에 김밥, 30분 걸었어" aria-label="오늘 한 일 적기">
+      <button class="say__go" aria-label="남기기">↑</button>
+    </form>
   </section>
 </main>
-<p class="toast" id="toast" role="status" hidden></p>
+<div class="toast" id="toast" role="status" hidden><span id="toastText"></span><button type="button" class="toast__undo" id="toastUndo" hidden>되돌리기</button></div>
 
 <dialog id="first" class="edit"><div class="edit__in" id="firstBody"></div></dialog>
 
@@ -144,8 +148,64 @@
   <button class="primary" value="ok">이렇게 할게요</button>
 </form></dialog>
 
+<!-- ── 마을 (town.js) ── -->
+<dialog id="townPage" class="edit"><form method="dialog" class="edit__in">
+  <div class="page__top"><button class="back" value="" aria-label="뒤로">‹</button><h2 tabindex="-1" autofocus>마을</h2></div>
+  <div class="scene scene--mini scene--town" id="townArt" aria-hidden="true"></div>
+  <div class="page__body" id="townBody"></div>
+</form></dialog>
+
+<dialog id="parkPage" class="edit"><form method="dialog" class="edit__in">
+  <div class="page__top"><button class="back" value="" aria-label="뒤로">‹</button><h2 tabindex="-1" autofocus>공원</h2></div>
+  <div class="scene scene--park" id="parkScene"></div>
+  <p class="sub park__sub" id="parkSub"></p>
+</form></dialog>
+
+<dialog id="friendPage" class="edit"><form method="dialog" class="edit__in">
+  <div class="page__top"><button class="back" value="" aria-label="뒤로">‹</button><h2 tabindex="-1" autofocus id="friendTitle"></h2></div>
+  <div class="scene scene--visit" id="friendScene"></div>
+  <div class="visit__bar">
+    <button type="button" class="primary" id="greetBtn">인사 남기기</button>
+    <button type="button" class="link" id="unfriendBtn">친구 집 목록에서 지우기</button>
+  </div>
+</form></dialog>
+
+<dialog id="shopSheet"><form class="sheet" method="dialog">
+  <h2>가게</h2>
+  <div id="shopBody"></div>
+</form></dialog>
+
+<dialog id="boardSheet"><form class="sheet" method="dialog">
+  <h2>게시판</h2>
+  <div id="boardBody"></div>
+</form></dialog>
+
+<dialog id="greetSheet"><form class="sheet" method="dialog">
+  <h2 id="greetTitle"></h2>
+  <p class="sec" style="margin-top:0">인사</p>
+  <div class="chips" id="greetChips"></div>
+  <p class="sec" style="margin-top:20px">선물 (안 골라도 돼요)</p>
+  <div class="props-grid props-grid--4 gift-grid" id="giftGrid"></div>
+  <button type="button" class="primary" id="greetMake">인사 코드 만들기</button>
+</form></dialog>
+
+<dialog id="codeSheet"><form class="sheet" method="dialog">
+  <h2 id="codeTitle"></h2>
+  <p class="sub" id="codeHelp" style="margin-top:-8px"></p>
+  <textarea class="field code-box" id="codeBox" readonly rows="3" aria-label="보낼 코드"></textarea>
+  <div class="chips"><button type="button" class="chip" id="codeCopy">복사하기</button><button type="button" class="chip" id="codeShare" hidden>공유하기</button></div>
+</form></dialog>
+
+<dialog id="codeIn"><form class="sheet" method="dialog">
+  <h2>받은 코드 넣기</h2>
+  <p class="sub" style="margin-top:-8px">친구에게 받은 방 코드나 인사 코드를 붙여 넣어요</p>
+  <textarea class="field code-box" id="codeInBox" rows="3" aria-label="받은 코드" placeholder="H2. 또는 G2. 로 시작하는 글자"></textarea>
+  <button class="primary" value="ok" id="codeInOk">넣기</button>
+</form></dialog>
+
 <script src="data.js"></script>
 <script src="life.js"></script>
 <script src="app.js"></script>
+<script src="town.js"></script>
 </body>
 </html>

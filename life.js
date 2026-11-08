@@ -1,5 +1,5 @@
 // 캐릭터의 생활 계산. 서버 없이 날짜와 고유값만으로 그날 한 일을 정한다.
-// 화면을 건드리지 않는 순수 함수만 둔다. 확인: node life.js
+// 화면을 건드리지 않는 순수 함수만 둔다 (data.js 다음에 불러옴). 확인: node check.js
 
 const iso = d => d.toLocaleDateString('sv-SE');   // YYYY-MM-DD (현지 날짜)
 const dayMs = 86400000;
@@ -13,7 +13,7 @@ function hash(s){   // FNV-1a
   return h >>> 0;
 }
 
-// spot = 방 안 자리. null 이면 잠깐 나가 있음 (방에 쪽지만 남음)
+// spot = 방 안 자리. null 이면 잠깐 나가 있음 (방에 쪽지만 남음, 공원에서 만날 수 있음)
 const ACTIVITIES = {
   window:  {spot:'window', held:null},
   wander:  {spot:'wander', held:null},
@@ -46,7 +46,7 @@ const DAYS_PER_INTEREST = 3, MAX_INTERESTS = 4;
 
 // 사용자의 기록은 계기만 된다: 순서가 조금 앞당겨질 뿐 정해지지는 않는다
 function recordHints(days){
-  const list = Object.values(days);
+  const list = Object.values(days ?? {});
   return {
     walk:  list.filter(d => d.moves.length).length * 8,
     plant: list.filter(d => d.meals.length).length * 3,
@@ -54,14 +54,29 @@ function recordHints(days){
     music: list.filter(d => d.sleep != null).length * 2,
   };
 }
-
-// ponytail: 저장 없이 매번 계산. 기록이 늘면 순서가 바뀔 수 있음. 정확한 이력이 필요해지면 발견 시점에 저장
-function interestsOn(c, today){
-  const count = Math.min(MAX_INTERESTS, Math.floor(daysBetween(c.born, today) / DAYS_PER_INTEREST) + 1);
+function rankInterests(c){
   const hints = recordHints(c.days), lean = LEAN[c.personality] ?? {};
   const rank = id => hash(`${c.seed}|${id}`) % 40 - (hints[id] ?? 0) - (lean[id] ?? 0);
-  return Object.keys(INTERESTS).sort((a, b) => rank(a) - rank(b)).slice(0, count);
+  return Object.keys(INTERESTS).sort((a, b) => rank(a) - rank(b));
 }
+const interestCount = (c, today) => Math.min(MAX_INTERESTS, Math.floor(daysBetween(c.born, today) / DAYS_PER_INTEREST) + 1);
+
+// 관심사는 생긴 날에 저장한다. 이미 생긴 건 기록이 늘어도 바뀌지 않는다
+function growInterests(c, today){
+  const have = Array.isArray(c.interests) ? c.interests : [];
+  const target = interestCount(c, today);
+  if (have.length >= target) return have;
+  const next = rankInterests(c).filter(id => !have.some(x => x.id === id));
+  const added = next.slice(0, target - have.length).map((id, i) => {
+    const on = addDays(c.born, (have.length + i) * DAYS_PER_INTEREST);
+    return {id, on: on > today ? today : on};
+  });
+  return [...have, ...added];
+}
+// 그날 가지고 있던 관심사. 저장된 게 없으면(예전 형식) 계산
+const interestsOn = (c, date) => Array.isArray(c.interests)
+  ? c.interests.filter(x => x.on <= date).map(x => x.id)
+  : rankInterests(c).slice(0, interestCount(c, date));
 
 const timeOf = h => h >= 6 && h < 11 ? 'morning' : h >= 11 && h < 17 ? 'noon' : h >= 17 && h < 22 ? 'evening' : 'night';
 
@@ -86,33 +101,105 @@ function awayLog(c, lastVisit, today, limit = 3){
   return log;
 }
 
-// 소품이 열리는 정도: 시간이 지나도, 들어와도, 기록해도 늘어난다 (기록만이 방법이 아님)
+// ── 소품 ──
+// 함께한 정도: 시간이 지나도, 들어와도, 기록해도 늘어난다 (기록만이 방법이 아님)
 const together = (c, today) => daysBetween(c.born, today) + c.visitDays + Object.keys(c.days).length;
+const ITEM_STEP = 3;   // 함께한 정도 3마다 하나 (매일 오고 남기면 하루 하나)
+const ALL_ITEMS = PROPS.flatMap(p => p.kinds.map((_, k) => `${p.id}:${k}`));
+const ownedItems = (c, today) => new Set([...ITEM_ORDER.slice(0, Math.floor(together(c, today) / ITEM_STEP) + 1), ...(c.got ?? [])]);
+// 가게의 오늘의 물건: 아직 없는 것 중 날짜로 하나. 다 있으면 null
+function shopItem(c, today){
+  const owned = ownedItems(c, today), left = ALL_ITEMS.filter(k => !owned.has(k));
+  return left.length ? left[hash(`${c.seed}|shop|${today}`) % left.length] : null;
+}
+const itemOf = key => { const [id, k] = key.split(':'); const p = PROPS.find(x => x.id === id); return {p, k:+k, name:p.kinds[+k][0]}; };
 
-if (typeof window === 'undefined'){
-  const assert = require('assert');
-  const c = {seed:12345, personality:'calm', born:'2026-10-01', visitDays:1, days:{}};
-  const today = '2026-11-04';
-  // 같은 날짜면 언제 다시 열어도 같은 일을 한다
-  assert.strictEqual(activityFor(c, today, 14, 3), activityFor(c, today, 14, 3));
-  // 새벽에는 잔다
-  assert.strictEqual(activityFor(c, today, 2), 'nap');
-  // 기록이 전혀 없어도 시간이 지나면 관심사가 생기고 소품도 열린다
-  assert.ok(interestsOn(c, today).length >= 2);
-  assert.ok(together(c, today) >= 18);
-  // 만난 첫날에는 관심사가 하나뿐이다
-  assert.strictEqual(interestsOn({...c, born:today}, today).length, 1);
-  // 운동을 많이 기록하면 산책이 앞당겨지지만, 그 외 관심사도 남는다
-  const moved = {...c, personality:'curious', days:Object.fromEntries(Array.from({length:6}, (_, i) =>
-    [addDays(today, -i), {moves:[{type:'걷기', min:20}], meals:[], sleep:null, rest:false}]))};
-  assert.ok(interestsOn(moved, today).includes('walk'));
-  assert.ok(interestsOn(moved, today).length > 1);
-  // 복귀 기록: 낮잠 없음, 연속 중복 없음, 3개까지. 어제까지 왔으면 비어 있음
-  const log = awayLog(c, '2026-10-20', today);
-  assert.strictEqual(log.length, 3);
-  assert.ok(log.every((x, i) => x.id !== 'nap' && x.id !== log[i - 1]?.id));
-  assert.strictEqual(awayLog(c, addDays(today, -1), today).length, 0);
-  // 월이 바뀌어도 날짜 계산이 맞다
-  assert.strictEqual(daysBetween('2026-10-31', '2026-11-02'), 2);
-  console.log('life.js ok');
+const seasonOf = key => { const m = +key.slice(5, 7); return m >= 3 && m <= 5 ? 'spring' : m >= 6 && m <= 8 ? 'summer' : m >= 9 && m <= 11 ? 'autumn' : 'winter'; };
+
+// ── 음식 이름 → 아는 음식 ──
+const hits = name => name.split(/\s+/).flatMap(w => {
+  const found = [];
+  for (const k of FOOD_KEYS) while (w.includes(k)) { found.push(k); w = w.replace(k, ' '); }
+  return found;
+});
+
+// ── 한 줄 입력 → 기록 ──
+// 「점심에 김밥하고 라면, 7시간 자고 30분 걸었어」 → 식사·잠·운동. 모르는 건 그냥 넘긴다
+const WHEN_WORDS = [[/아침/, '아침'], [/점심|브런치/, '점심'], [/저녁/, '저녁'], [/간식|야식|디저트/, '간식']];
+const MOOD_WORDS = [[/힘들|피곤|지쳤|지친|우울|별로였|짜증|속상/, 'hard'], [/좋았|행복|신났|최고|즐거|재밌|재미있/, 'good'], [/보통|그냥 그래|무난|그럭저럭/, 'soso']];
+const HOURS_RE = /(\d+(?:\.\d+)?)\s*시간(\s*반)?/;
+const FILLER = /^(오늘|그리고|좀|많이|조금|맛있게|든든하게|간단히|대충|했어|했다|함)$/;
+function mealName(s){
+  const words = s.replace(/(아침|점심|저녁|간식|야식|브런치|디저트)(으로|으론|에는|에|은|는|엔|로)?/g, ' ')
+    .replace(/(을|를)?\s*(먹|마셨|마시|마심)\S*/g, ' ')
+    .split(/\s+/).map(w => w.replace(/(이랑|랑|하고|으로|에|은|는|을|를)$/, m => w.length > m.length ? '' : m))
+    .filter(w => w && !FILLER.test(w));
+  return words.join(' ').slice(0, 40);
+}
+function parseRecord(text, fallbackWhen = '간식'){
+  let sleep = null, mood = null, rest = false, when = null;
+  const moves = [], meals = [];   // 이 함수 안에서만 쌓는 목록
+  for (const raw of String(text).slice(0, 200).split(/[,.\n!?~]+|\s*그리고\s*|(?<=고)\s+/)){
+    const s = raw.trim(); if (!s) continue;
+    if (/아무것도\s*안/.test(s)){ rest = true; continue; }
+    when = WHEN_WORDS.find(([re]) => re.test(s))?.[1] ?? when;
+    mood = MOOD_WORDS.find(([re]) => re.test(s))?.[1] ?? mood;
+    const h = s.match(HOURS_RE), hours = h ? +h[1] + (h[2] ? .5 : 0) : null;
+    if (/잤|자고|수면|잠(?!깐)/.test(s) && !/낮잠/.test(s)){
+      sleep = Math.min(14, hours ?? (/푹|꿀잠|늦잠|많이/.test(s) ? 9 : /못|조금|적게|설쳤|뒤척/.test(s) ? 5 : 7));
+      continue;
+    }
+    const move = MOVE_WORDS.find(([re]) => re.test(s));
+    if (move){
+      const min = +(s.match(/(\d+)\s*분/)?.[1] ?? 0) || (hours ? hours * 60 : 30);
+      moves.push({type:move[1], min:Math.max(5, Math.min(300, Math.round(min)))});
+      continue;
+    }
+    const found = hits(s);
+    if (!found.length && !/먹|마셨|마시|마심/.test(s)) continue;
+    const name = mealName(s) || found.join(' ');
+    if (!name) continue;
+    const at = when ?? fallbackWhen, prev = meals.at(-1);
+    if (prev && prev.when === at) meals[meals.length - 1] = {when:at, name:`${prev.name} ${name}`.slice(0, 40)};   // 「김밥하고 라면」 = 한 끼
+    else meals.push({when:at, name});
+    when = at;
+  }
+  return {sleep, moves, meals, mood, rest};
+}
+const isEmptyParse = r => r.sleep == null && !r.moves.length && !r.meals.length && !r.mood && !r.rest;
+
+// ── 형식 검사 (저장값·불러온 파일·친구 코드) ──
+const inRange = (v, n) => Number.isInteger(v) && v >= 0 && v < n;
+const partSize = p => p.colors ? p.colors.length : p.n;
+const cleanLook = raw => Object.fromEntries(PARTS.map(p => [p.k, inRange(raw?.[p.k], partSize(p)) ? raw[p.k] : DEFAULT_LOOK[p.k]]));
+const isDateKey = k => typeof k === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(k) && !isNaN(Date.parse(k));
+const cleanName = (s, fallback) => typeof s === 'string' && s.trim() ? s.trim().slice(0, 12) : fallback;
+const cleanKinds = raw => Object.fromEntries(PROPS.filter(p => inRange(raw?.[p.id], p.kinds.length)).map(p => [p.id, raw[p.id]]));
+
+// ── 친구 코드: 서버 없이 방을 글자로 주고받는다. 기록(잠·식사 등)은 넣지 않는다 ──
+const b64 = s => btoa(String.fromCharCode(...new TextEncoder().encode(s))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const unb64 = s => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0)));
+const CODE_RE = /([HG])2\.([A-Za-z0-9_-]{8,3000})/;
+const toCode = (type, data) => `${type === 'room' ? 'H' : 'G'}2.${b64(JSON.stringify(data))}`;
+const roomData = (c, kinds) => ({n:c.name, p:c.personality, l:PARTS.map(p => c.look[p.k]), s:c.seed, b:c.born, i:(c.interests ?? []).map(x => x.id), k:kinds});
+function cleanRoom(raw){
+  if (!Number.isInteger(raw?.s) || !Array.isArray(raw.l)) return null;
+  const born = isDateKey(raw.b) ? raw.b : '2026-01-01';
+  const ids = [...new Set(Array.isArray(raw.i) ? raw.i : [])].filter(id => INTERESTS[id]).slice(0, MAX_INTERESTS);
+  return {seed:raw.s, name:cleanName(raw.n, '친구'), personality:PERSONALITIES[raw.p] ? raw.p : 'calm',
+    look:cleanLook(Object.fromEntries(PARTS.map((p, i) => [p.k, raw.l[i]]))), born,
+    interests:ids.map(id => ({id, on:born})), kinds:{window:0, ...cleanKinds(raw.k)}};
+}
+function cleanGift(raw){
+  if (!Number.isInteger(raw?.s) || !Number.isInteger(raw.t) || !inRange(raw.g, GREETS.length) || !isDateKey(raw.d)) return null;
+  return {from:cleanName(raw.f, '친구'), fromSeed:raw.s, to:raw.t, greet:raw.g, item:ALL_ITEMS.includes(raw.it) ? raw.it : null, date:raw.d};
+}
+function readCode(text){
+  const m = String(text ?? '').match(CODE_RE);
+  if (!m) return null;
+  try {
+    const raw = JSON.parse(unb64(m[2]));
+    const data = m[1] === 'H' ? cleanRoom(raw) : cleanGift(raw);
+    return data ? {type:m[1] === 'H' ? 'room' : 'gift', data, id:hash(m[0])} : null;
+  } catch (err){ return null; }   // 잘못된 코드는 「못 읽음」으로만 처리 (호출한 쪽이 안내)
 }

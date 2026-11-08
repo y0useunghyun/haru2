@@ -221,7 +221,14 @@ const goalBase = g => [0,1,2].map(i=>Math.max(1, g.meals + AIMS[g.aim].d[i]));
 const MOVE_TYPES = {
   '걷기':'가볍게 몸을 깨워요', '달리기':'심폐 운동 · 에너지를 많이 써요', '근력':'근육 회복에 단백질이 필요해요',
   '자전거':'하체와 심폐를 같이 써요', '요가':'몸을 풀고 긴장을 낮춰요', '수영':'전신 운동 · 에너지를 많이 써요', '구기':'전신 · 순발력',
+  '운동':'몸을 움직였어요',
 };
+// 한 줄 입력에서 운동 찾기 (앞에서부터 먼저 걸린 것)
+const MOVE_WORDS = [
+  [/헬스|웨이트|근력|스쿼트|푸시업|팔굽혀/, '근력'], [/달리|달렸|뛰었|뛰고|러닝|조깅|런닝/, '달리기'],
+  [/자전거|따릉이|사이클/, '자전거'], [/요가|필라테스|스트레칭/, '요가'], [/수영/, '수영'],
+  [/축구|농구|배구|야구|테니스|배드민턴|풋살|탁구|볼링/, '구기'], [/걸었|걷|산책|만보/, '걷기'], [/운동/, '운동'],
+];
 const SUGGEST = ['닭가슴살 밥','비빔밥','샐러드','김밥','제육 덮밥','된장찌개 밥'];
 const NUT = ['단백질','탄수화물','채소'];
 const MEALS = ['아침','점심','저녁','간식'];
@@ -233,36 +240,66 @@ const star = (x,y,r) => `M${x} ${y-r} L${x+r*.3} ${y-r*.3} L${x+r} ${y} L${x+r*.
 const outlineFill = (shapes, fill) => `<g stroke-width="4">${shapes}</g><g fill="${fill}" stroke="none">${shapes}</g>`;   // 겹친 도형 안쪽 선 없이
 const POT = c => `<path d="M16 46 H44 L40 76 H20Z" fill="${c}"/>`;
 const FLOOR_DOT = c => `<ellipse cx="25" cy="101" rx="14" ry="5" fill="${c}"/>`;
+const CURTAIN = (c, deco = '') => `<path d="M6 4 H26 C24 24 28 44 22 62 C16 60 10 60 4 62 C8 44 4 24 6 4Z M74 4 H54 C56 24 52 44 58 62 C64 60 70 60 76 62 C72 44 76 24 74 4Z" fill="${c}"/>${deco}<path d="M2 4 H78" stroke-width="3"/><path d="M8 40 Q15 44 24 40 M56 40 Q65 44 72 40"/>`;
 const PROPS = [
-  {need:1, id:'plant', name:'화분', layer:'floor', kinds:[
+  {id:'plant', name:'화분', layer:'floor', kinds:[
     ['잎 화분', P('0 0 60 80','<path d="M30 46 C18 34 14 20 20 10 C28 18 30 30 30 46Z" fill="#86D9B9"/><path d="M30 46 C40 36 48 26 46 14 C36 20 32 32 30 46Z" fill="#5FC79F"/>'+POT('#E8835F'))],
     ['선인장', P('0 0 60 80','<path d="M24 34 H18 a4 4 0 0 1 -4 -4 V24 a3 3 0 0 1 6 0 V28 H24" fill="#86D9B9"/><path d="M36 30 H42 a4 4 0 0 0 4 -4 V18 a3 3 0 0 0 -6 0 V24 H36" fill="#86D9B9"/><path d="M24 46 V20 a6 6 0 0 1 12 0 V46Z" fill="#86D9B9"/><circle cx="30" cy="13" r="3" fill="#FF9EB8"/>'+POT('#C9B6F2'))],
     ['튤립', P('0 0 60 80','<path d="M30 46 V22"/><path d="M30 42 C22 38 20 32 22 28 C28 30 30 36 30 42Z" fill="#5FC79F"/><path d="M22 12 L26 18 L30 10 L34 18 L38 12 V22 C38 28 22 28 22 22Z" fill="#FF9EB8"/>'+POT('#FFD23F'))]]},
-  {need:3, id:'rug', name:'러그', layer:'floor', kinds:[
+  {id:'rug', name:'러그', layer:'floor', kinds:[
     ['줄무늬', P('0 0 200 36','<ellipse cx="100" cy="18" rx="96" ry="15" fill="#FFB3C7"/><ellipse cx="100" cy="18" rx="74" ry="9" stroke="#fff" stroke-width="3" stroke-dasharray="6 6"/>')],
     ['체크', P('0 0 200 36','<rect x="8" y="4" width="184" height="28" rx="6" fill="#8EC9FF"/><path d="M38 4 V32 M68 4 V32 M98 4 V32 M128 4 V32 M158 4 V32 M8 18 H192" stroke="#fff" stroke-width="5"/><rect x="8" y="4" width="184" height="28" rx="6"/>')],
     ['구름', P('0 0 200 36', outlineFill('<ellipse cx="44" cy="20" rx="38" ry="12"/><ellipse cx="100" cy="16" rx="46" ry="13"/><ellipse cx="156" cy="20" rx="38" ry="12"/>','#C9B6F2'))]]},
-  {need:5, id:'frame', name:'액자', layer:'wall', kinds:[
+  {id:'frame', name:'액자', layer:'wall', kinds:[
     ['산', P('0 0 50 60','<path d="M10 14 L25 3 L40 14"/><rect x="4" y="14" width="42" height="42" rx="4" fill="#FFD23F"/><path d="M11 49 L21 33 L29 43 L35 37 L41 49Z" fill="#86D9B9"/><circle cx="35" cy="24" r="4" fill="#fff"/>')],
     ['하트', P('0 0 50 60','<path d="M10 14 L25 3 L40 14"/><rect x="4" y="14" width="42" height="42" rx="4" fill="#FF9EB8"/><path d="M25 47 C12 38 12 27 19 26 C22 26 24 28 25 30 C26 28 28 26 31 26 C38 27 38 38 25 47Z" fill="#fff"/>')],
     ['고양이', P('0 0 50 60','<path d="M10 14 L25 3 L40 14"/><rect x="4" y="14" width="42" height="42" rx="4" fill="#8EC9FF"/><path d="M15 34 L16 23 L23 29Z M35 34 L34 23 L27 29Z" fill="#fff"/><circle cx="25" cy="37" r="11" fill="#fff"/><circle cx="21" cy="36" r="1.6" fill="#1E1B18" stroke="none"/><circle cx="29" cy="36" r="1.6" fill="#1E1B18" stroke="none"/>')]]},
-  {need:8, id:'lamp', name:'조명', layer:'floor', kinds:[
+  {id:'lamp', name:'조명', layer:'floor', kinds:[
     ['스탠드', P('0 0 50 110','<path d="M10 34 L40 34 L34 6 L16 6Z" fill="#FFD23F"/><path d="M25 34 V98" stroke-width="3"/>'+FLOOR_DOT('#1E1B18'))],
     ['버섯 램프', P('0 0 50 110','<rect x="19" y="68" width="12" height="32" rx="5" fill="#FFF3D6"/><path d="M5 70 C5 50 45 50 45 70Z" fill="#FF9EB8"/><circle cx="16" cy="63" r="3" fill="#fff" stroke="none"/><circle cx="32" cy="60" r="2.5" fill="#fff" stroke="none"/>'+FLOOR_DOT('#1E1B18'))],
     ['촛불', P('0 0 50 110','<rect x="17" y="72" width="16" height="28" rx="3" fill="#fff"/><path d="M25 72 V66"/><path d="M25 52 C31 59 31 66 25 66 C19 66 19 59 25 52Z" fill="#FFD23F"/>'+FLOOR_DOT('#C9B6F2'))]]},
-  {need:0, id:'window', name:'창문', layer:'wall', kinds:[
+  {id:'window', name:'창문', layer:'wall', kinds:[
     ['네모', P('0 0 60 60','<rect x="4" y="4" width="52" height="52" rx="8" fill="#BFE3FF"/><path d="M30 4 V56 M4 30 H56"/><circle cx="17" cy="17" r="5" fill="#fff" stroke="none"/>')],
     ['동그라미', P('0 0 60 60','<circle cx="30" cy="30" r="26" fill="#BFE3FF"/><path d="M30 4 V56 M4 30 H56"/><circle cx="18" cy="18" r="5" fill="#fff" stroke="none"/>')],
     ['아치', P('0 0 60 60','<path d="M6 56 V28 a24 24 0 0 1 48 0 V56Z" fill="#BFE3FF"/><path d="M30 4 V56 M6 34 H54"/><circle cx="20" cy="20" r="4" fill="#fff" stroke="none"/>')]]},
-  {need:12, id:'books', name:'소품', layer:'floor', kinds:[
+  {id:'books', name:'소품', layer:'floor', kinds:[
     ['책', P('0 0 50 44','<rect x="4" y="30" width="42" height="12" rx="2" fill="#8EC9FF"/><rect x="8" y="18" width="36" height="12" rx="2" fill="#FF9EB8"/><rect x="6" y="6" width="38" height="12" rx="2" fill="#FFD23F"/>')],
     ['곰인형', P('0 0 50 44','<ellipse cx="25" cy="35" rx="12" ry="8" fill="#C98B5A"/><circle cx="14" cy="10" r="5" fill="#C98B5A"/><circle cx="36" cy="10" r="5" fill="#C98B5A"/><circle cx="25" cy="17" r="11" fill="#C98B5A"/><ellipse cx="25" cy="21" rx="4" ry="3" fill="#F1D7BD"/><circle cx="21" cy="15" r="1.4" fill="#1E1B18" stroke="none"/><circle cx="29" cy="15" r="1.4" fill="#1E1B18" stroke="none"/>')],
     ['게임기', P('0 0 50 44','<rect x="5" y="16" width="40" height="24" rx="9" fill="#8EC9FF"/><path d="M12 28 H20 M16 24 V32"/><circle cx="32" cy="26" r="2.6" fill="#FF9EB8"/><circle cx="38" cy="31" r="2.6" fill="#FFD23F"/>')]]},
-  {need:18, id:'garland', name:'장식', layer:'wall', kinds:[
+  {id:'garland', name:'장식', layer:'wall', kinds:[
     ['가랜드', P('0 0 200 40','<path d="M4 6 Q100 54 196 6"/>' + curve([24,52,80,108,136,164]).map(([x,y],i)=>`<path d="M${x-9} ${y} L${x+9} ${y} L${x} ${y+16}Z" fill="${PC[i%4]}"/>`).join(''))],
     ['전구줄', P('0 0 200 40','<path d="M4 6 Q100 54 196 6"/>' + curve([24,48,72,100,128,152,176]).map(([x,y],i)=>`<rect x="${x-3}" y="${y}" width="6" height="4" fill="#1E1B18"/><ellipse cx="${x}" cy="${y+10}" rx="5" ry="7" fill="${PC[i%4]}"/>`).join(''))],
     ['별', P('0 0 200 40', curve([30,70,100,130,170]).map(([x,y],i)=>`<path d="M${x} 0 V${y+4}"/><path d="${star(x,y+12,9)}" fill="${['#FFD23F','#FF9EB8','#FFD23F','#8EC9FF','#FFD23F'][i]}"/>`).join(''))]]},
+  // ── 새 칸. 벽지·바닥은 그림 대신 면 무늬(세 번째 값) ──
+  {id:'wallpaper', name:'벽지', layer:'plane', kinds:[
+    ['줄무늬', '', 'background:repeating-linear-gradient(90deg,#FFE0EA 0 16px,#FFF3D6 16px 32px)'],
+    ['체크', '', 'background:repeating-conic-gradient(#DDEEFF 0 25%,#FFF8EC 0 50%) 0 0/32px 32px'],
+    ['별빛', '', 'background:radial-gradient(#FFD23F 2px,transparent 2.6px) 0 0/22px 22px,radial-gradient(#fff 1.4px,transparent 2px) 11px 11px/22px 22px,#CDEFE0']]},
+  {id:'floor', name:'바닥', layer:'plane', kinds:[
+    ['나무', '', 'background:repeating-linear-gradient(0deg,#E6B07A 0 22px,#D49A62 22px 24px)'],
+    ['타일', '', 'background:repeating-conic-gradient(#F7E3C6 0 25%,#E9C99E 0 50%) 0 0/36px 36px'],
+    ['민트', '', 'background:radial-gradient(rgba(30,27,24,.08) 1.6px,transparent 2px) 0 0/16px 16px,#BDE8D3']]},
+  {id:'curtain', name:'커튼', layer:'wall', kinds:[
+    ['분홍', P('0 0 80 66', CURTAIN('#FF9EB8'))],
+    ['노랑 체크', P('0 0 80 66', CURTAIN('#FFD23F', '<path d="M8 16 H22 M7 30 H24 M58 16 H72 M56 30 H73" stroke="#fff" stroke-width="3"/>'))],
+    ['하늘 땡땡이', P('0 0 80 66', CURTAIN('#8EC9FF', [[14,14],[12,30],[16,52],[66,14],[68,30],[64,52]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="2.6" fill="#fff" stroke="none"/>`).join('')))]]},
+  {id:'chair', name:'의자', layer:'floor', kinds:[
+    ['나무 의자', P('0 0 50 64','<rect x="10" y="4" width="30" height="30" rx="8" fill="#E8A86A"/><path d="M12 42 V62 M38 42 V62" stroke-width="4"/><rect x="5" y="32" width="40" height="10" rx="4" fill="#C98B5A"/>')],
+    ['민트 의자', P('0 0 50 64','<rect x="10" y="4" width="30" height="30" rx="14" fill="#86D9B9"/><path d="M12 42 V62 M38 42 V62" stroke-width="4"/><rect x="5" y="32" width="40" height="10" rx="5" fill="#5FC79F"/>')],
+    ['빈백', P('0 0 50 64','<path d="M6 60 C2 44 10 26 25 26 C40 26 48 44 44 60Z" fill="#C9B6F2"/><path d="M14 44 Q25 38 36 44" stroke-dasharray="3 4"/>')]]},
+  {id:'clock', name:'시계', layer:'wall', kinds:[
+    ['동그라미', P('0 0 40 40','<circle cx="20" cy="20" r="16" fill="#fff"/><path d="M20 20 V10 M20 20 L27 24"/><circle cx="20" cy="20" r="1.6" fill="#1E1B18"/>')],
+    ['노랑', P('0 0 40 40','<rect x="4" y="4" width="32" height="32" rx="10" fill="#FFD23F"/><path d="M20 20 V11 M20 20 L26 20"/><circle cx="20" cy="20" r="1.6" fill="#1E1B18"/>')],
+    ['뻐꾸기', P('0 0 40 40','<path d="M6 18 L20 4 L34 18 V36 H6Z" fill="#E8A86A"/><circle cx="20" cy="24" r="7" fill="#fff"/><path d="M20 24 V19 M20 24 L23 26"/><circle cx="20" cy="12" r="2.4" fill="#FF9EB8"/>')]]},
+  {id:'desktop', name:'책상 위', layer:'floor', kinds:[
+    ['어항', P('0 0 40 36','<path d="M8 10 H32 C38 18 36 32 20 34 C4 32 2 18 8 10Z" fill="#BFE3FF"/><path d="M14 22 C18 18 24 18 26 22 C24 26 18 26 14 22Z M26 22 L30 19 V25Z" fill="#FF9EB8"/>')],
+    ['라디오', P('0 0 40 36','<path d="M10 12 L28 2"/><rect x="3" y="12" width="34" height="22" rx="5" fill="#FF9EB8"/><circle cx="13" cy="23" r="5" fill="#fff"/><path d="M24 19 H32 M24 24 H32 M24 29 H30"/>')],
+    ['머그컵', P('0 0 40 36','<path d="M16 10 Q14 6 16 2 M22 10 Q20 6 22 2" stroke="#A9ACA5"/><rect x="9" y="12" width="20" height="22" rx="4" fill="#FFD23F"/><path d="M29 17 q7 0 7 6 q0 6 -7 6"/>')]]},
 ];
+// 얻는 순서: 칸마다 첫 번째 종류부터, 그다음 두 번째, 세 번째. 화분은 첫 시작에서 하나 고른다
+const ITEM_ORDER = [0, 1, 2].flatMap(k => ['window','rug','frame','lamp','wallpaper','curtain','books','clock','chair','floor','desktop','garland','plant']
+  .map(id => `${id}:${k}`)).filter(key => key !== 'plant:0');
+const OLD_NEED = {plant:1, rug:3, frame:5, lamp:8, window:0, books:12, garland:18};   // v1 저장값 옮길 때만 씀
 
 // ── 성격 4가지 ────────────────────────────
 // 기준: 학교 선생님이 해도 이상하지 않은 말이면 다시 쓴다. 상태만 말하고 원인은 말하지 않는다.
@@ -371,4 +408,38 @@ const AFTER_RECORD = {
   calm:    {low:'눈꺼풀이 조금 무거워요. 오늘은 일찍 눕고 싶어요', ok:'기지개를 천천히 켜봤어요', good:'이불이 아직 포근해요', move:'저도 몸을 조금 풀어볼게요'},
   playful: {low:'하암… 나 지금 자는 거 아니다?', ok:'기지개 대결 할래?', good:'이불이랑 더 놀고 싶어!', move:'나도 운동하는 척 해볼게, 봐봐!'},
   curious: {low:'하품은 왜 옮을까요? 눈이 무거워요', ok:'기지개를 켜면 왜 시원할까요?', good:'이불은 왜 아침에 더 따뜻할까요?', move:'이 동작은 이렇게 하는 거예요?'},
+};
+
+// ── 한 줄 입력·마을·친구 ──────────────────
+// 한 줄 입력에서 아무것도 못 알아들었을 때
+const WHAT = {
+  casual:'음, 잘 모르겠어. 잠, 운동, 먹은 걸 말해 줄래?',
+  polite:'음, 잘 모르겠어요. 잠, 운동, 먹은 걸 알려 줄래요?',
+};
+const SEASONS = {
+  spring:{label:'봄', grass:'#BFE6A8', leaf:'#FFB3C7', ground:'#F3E3C3'},
+  summer:{label:'여름', grass:'#86D9B9', leaf:'#5FC79F', ground:'#F2D9A8'},
+  autumn:{label:'가을', grass:'#E8C886', leaf:'#F2945C', ground:'#EBCB9C'},
+  winter:{label:'겨울', grass:'#F4F7FB', leaf:'#FFFFFF', ground:'#E6E9EF'},
+};
+// 지금 하고 있는 일 (친구 집 목록에 보임)
+const NOW_TEXT = {window:'창밖 구경 중', wander:'방을 돌아다니는 중', nap:'자는 중', read:'책 읽는 중', draw:'그림 그리는 중', plant:'화분 돌보는 중',
+  music:'음악 듣는 중', collect:'보물 모으는 중', stretch:'몸 푸는 중', walk:'공원 산책 중'};
+// 공원에서 하는 일. 계절 이름은 {s} 자리에 들어감
+const PARK = {
+  casual:{walk:['{s} 공원 냄새 좋다!','한 바퀴 더 돌자!'], bench:['벤치에 앉아서 쉬자','여기 앉으면 다 보여!'], leaf:['이거 주웠어! 예쁘지?','오늘의 보물 발견!'], sky:['구름 모양 봐!','하늘 진짜 넓다'], friend:'{n}도 나와 있네!'},
+  polite:{walk:['{s} 공원이 좋네요','천천히 걸어요'], bench:['벤치에 잠깐 앉아요','바람이 시원해요'], leaf:['예쁜 걸 하나 주웠어요','이건 방에 둘까요?'], sky:['구름이 천천히 가요','하늘이 맑아요'], friend:'{n}도 나와 있어요'},
+};
+const PARK_SPOTS = {walk:{x:34, y:80}, bench:{x:70, y:76}, leaf:{x:50, y:90}, sky:{x:56, y:82}};
+const SHOP_LINE = {casual:'이거 우리 방에 두자!', polite:'방에 잘 어울릴 것 같아요'};
+const VISIT_LINE = {casual:['우와, 여기 좋다!','이 방 따뜻하다'], polite:['방이 참 아늑해요','여기 오니까 좋네요']};
+const GIFT_LINE = {casual:n => `${n}한테서 선물이 왔어!`, polite:n => `${n}에게서 선물이 왔어요`};
+const GREETS = ['놀러 왔어요!','방이 예뻐요','오늘도 잘 지내요','선물 두고 가요'];
+// 게시판 오늘의 소식: 날짜로 하나 고름
+const NEWS = {
+  spring:['공원에 벚꽃이 피기 시작했대요','가게에 봄 소품이 들어왔대요','오후엔 바람이 따뜻하대요'],
+  summer:['공원 연못에 오리가 왔대요','저녁엔 매미 소리가 들려요','가게 앞에 파라솔이 생겼어요'],
+  autumn:['공원 나무가 물들기 시작했어요','낙엽 밟는 소리가 좋은 계절이에요','가게에 따뜻한 차가 들어왔대요'],
+  winter:['공원에 눈사람이 생겼대요','가게 창문에 성에가 꼈어요','해가 일찍 져요. 따뜻하게 입어요'],
+  all:['게시판에 고양이 그림이 붙었어요','누가 공원 벤치를 새로 칠했대요','가게 주인이 휴가에서 돌아왔대요','친구에게 방 코드를 보내 보세요'],
 };
