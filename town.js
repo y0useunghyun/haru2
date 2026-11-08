@@ -20,13 +20,13 @@ const meetLine = (x, reg = register()) => fill((x.date === TODAY ? x.ev.now : x.
 const firstMeet = f => { for (let d = f.at; d <= TODAY && daysBetween(f.at, d) < 60; d = addDays(d, 1)) if (d === TODAY ? metToday(f) : meetOf(f, d)) return d; return null; };
 
 // ── 마을 거리: 건물을 눌러 들어간다. 오늘 거리에서 만난 친구가 같이 서 있다 ──
-const TOWN_SPOTS = [{x:44, y:93}, {x:60, y:94}, {x:74, y:93}];
+const TOWN_SPOTS = [{x:42, y:86}, {x:58, y:87}, {x:74, y:86}];   // 보도 위 (%)
 function drawTown(){
   const time = timeOf(hourNow()), key = seasonOf(TODAY);
   const here = state.friends.filter(f => metToday(f)?.place === 'town').slice(0, 2);
   const walking = state.friends.filter(f => friendNow(f) === 'walk' || metToday(f)?.place === 'park');
   const shopSub = state.shopDay === TODAY ? '오늘 물건은 받아 왔어요' : shopItem(state, TODAY) ? '가게에 오늘의 물건이 있어요' : '';
-  $('townArt').innerHTML = `<div class="scene__base">${townSvg(key, time)}</div>
+  $('townArt').innerHTML = `<div class="scene__base">${townScene(key, time)}</div>
     ${[state, ...here.map(f => f.room)].map((c, i) => `<div class="actor actor--static" style="--x:${TOWN_SPOTS[i].x};--y:${TOWN_SPOTS[i].y}"><div class="char">${avatar(c.look, {shadow:false})}</div></div>`).join('')}
     <div class="night" data-time="${time}"></div>`;
   const meets = recentMeets(1);
@@ -47,7 +47,6 @@ function goPlace(place){
 }
 $('townBtn').onclick = () => { drawTown(); $('townPage').showModal(); };
 $('townArt').onclick = e => { const g = e.target.closest('[data-place]'); if (g) goPlace(g.dataset.place); };
-$('townArt').onkeydown = e => { const g = e.target.closest('[data-place]'); if (g && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); goPlace(g.dataset.place); } };
 $('townBody').onclick = e => {
   const fr = e.target.closest('[data-friend]'); if (fr) openFriend(+fr.dataset.friend);
   if (e.target.closest('#myCodeBtn')) openCode('내 방 코드', toCode('room', roomData(state, myKinds())), '친구가 이 링크를 열거나 코드를 넣으면 내 방에 놀러 와요. 서로 코드를 넣으면 캐릭터끼리 마을에서 만나요');
@@ -56,7 +55,7 @@ $('townBody').onclick = e => {
 
 // ── 공원: 계절이 바뀌고, 오늘 만난 친구와 같이 있다 ──
 const PARK_ACTS = Object.keys(PARK_SPOTS);
-const WALKER_SPOTS = [{x:84, y:94}, {x:14, y:96}];
+const WALKER_SPOTS = [{x:86, y:97}, {x:12, y:96}];
 function drawPark(){
   const key = seasonOf(TODAY), time = timeOf(hourNow()), R = PARK[register()];
   const date = state.friends.find(f => metToday(f)?.place === 'park');
@@ -68,7 +67,7 @@ function drawPark(){
     : walkers.length && talk % 2 ? fill(R.friend, {n:walkers[0].room.name}) : fill(R[act][talk % R[act].length], {s:SEASONS[key].label});
   const actor = (look, at, id = '') => `<div class="actor actor--static" style="--x:${at.x};--y:${at.y}">${id
     ? `<button type="button" class="char" id="${id}" aria-label="${esc(state.name)} 쓰다듬기">` : '<div class="char">'}${avatar(look, {shadow:false})}${id ? '</button>' : '</div>'}</div>`;
-  $('parkScene').innerHTML = `<div class="scene__base">${parkSvg(key, time)}</div>
+  $('parkScene').innerHTML = `<div class="scene__base">${parkScene(key, time)}</div>
     ${walkers.map((f, i) => actor(f.room.look, WALKER_SPOTS[i])).join('')}
     ${ev ? actor(date.room.look, ev.pair[1]) : ''}
     ${actor(state.look, mine, 'parkChar')}

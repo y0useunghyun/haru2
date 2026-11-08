@@ -156,22 +156,15 @@ function myKinds(){
     return ks.length && (p.id === 'window' || !state.hiddenProps.includes(p.id)) ? [[p.id, pick]] : [];
   }));
 }
-// 벽지·바닥은 무늬 칸, 나머지는 그림
-const kindArt = (p, k) => p.layer === 'plane' ? `<span class="pat" style="${p.kinds[k][2]}"></span>` : p.kinds[k][1];
+// 방 그림은 도트 한 장 (pixel-room.js). 밤 어둠은 위에 덮는 층
 function sceneBase({bare = false, kinds = myKinds()} = {}){
-  const time = timeOf(hourNow()), on = bare ? {} : kinds;
-  const plane = id => on[id] != null ? ` style="${PROPS.find(p => p.id === id).kinds[on[id]][2]}"` : '';
-  const shown = PROPS.filter(p => on[p.id] != null && p.layer !== 'plane' && p.id !== 'window');
-  return `<div class="plane plane--wall" data-time="${time}"${plane('wallpaper')}></div><div class="plane plane--floor" data-time="${time}"${plane('floor')}></div>
-    <span class="fx fx--window">${windowArt(kinds.window ?? 0, time, weather)}</span>
-    ${bare ? '' : `<span class="fx fx--bed">${BED}</span><span class="fx fx--desk">${DESK}</span>`}
-    ${shown.map(p => `<span class="fx fx--${p.id}">${p.kinds[on[p.id]][1]}</span>`).join('')}
-    <div class="night" data-time="${time}" data-lamp="${on.lamp != null}"></div>`;
+  const time = timeOf(hourNow());
+  return `${pxImg(roomImage(kinds, time, weather, bare), 'scene-img')}<div class="night" data-time="${time}" data-lamp="${!bare && kinds.lamp != null}"></div>`;
 }
 
 // ── 캐릭터 생활 ──
 const SPOTS = {   // 발 위치 (scene 기준 %), by = 말풍선 높이 보정
-  window:{x:50, y:62}, wander:{x:34, y:78}, wander2:{x:66, y:74}, center:{x:50, y:88}, desk:{x:68, y:70}, plant:{x:34, y:92}, bed:{x:27, y:58, lying:true},
+  window:{x:50, y:62}, wander:{x:34, y:80}, wander2:{x:62, y:76}, center:{x:50, y:89}, desk:{x:71, y:65}, plant:{x:25, y:92}, bed:{x:27, y:47, lying:true},
 };
 let tick = Math.floor(Date.now()/60000), talk = hash(Date.now()) % 100, greeted = false;
 let poke = null, reply = null, newProp = null, replyTimer, pokeTimer, propTimer;
@@ -573,13 +566,13 @@ function drawRoomPage(){
     <div class="props-grid">${PROPS.map(p => { const ks = ownedKinds(p), k = on[p.id];
       return `<button type="button" class="pcard ${ks.length ? '' : 'is-locked'}" data-prop="${p.id}" ${ks.length ? `aria-pressed="${k != null}"` : 'disabled'}>
         <span class="pcard__img">${kindArt(p, k ?? ks[0] ?? 0)}</span><b>${p.name}</b>
-        <span class="pcard__st">${!ks.length ? '아직 없어요' : k == null ? '빼 뒀어요' : `${p.kinds[k][0]} · ${ks.length}/${p.kinds.length}`}</span></button>`; }).join('')}</div>`;
+        <span class="pcard__st">${!ks.length ? '아직 없어요' : k == null ? '빼 뒀어요' : `${p.kinds[k]} · ${ks.length}/${p.kinds.length}`}</span></button>`; }).join('')}</div>`;
 }
 let propSel = null;
 function drawPropSheet(){
   const p = PROPS.find(x => x.id === propSel), k = myKinds()[p.id] ?? -1, ks = ownedKinds(p);
   $('propTitle').textContent = p.name;
-  $('propKinds').innerHTML = p.kinds.map(([name], i) => ks.includes(i)
+  $('propKinds').innerHTML = p.kinds.map((name, i) => ks.includes(i)
       ? `<button type="button" class="pcard" data-kind="${i}" aria-pressed="${i === k}"><span class="pcard__img">${kindArt(p, i)}</span><b>${name}</b></button>`
       : `<button type="button" class="pcard is-locked" disabled><span class="pcard__img">${kindArt(p, i)}</span><b>아직 없어요</b></button>`).join('')
     + (p.id === 'window' ? '' : `<button type="button" class="pcard" data-kind="-1" aria-pressed="${k === -1}"><span class="pcard__none">–</span><b>없음</b></button>`);

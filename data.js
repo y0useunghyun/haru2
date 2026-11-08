@@ -1,176 +1,20 @@
-// 하루 2 데이터. 아바타·음식·소품은 v3에서 그대로 옮김
-const INK = '#191A18', MOUTH_IN = '#7A2E22', CHEEK = '#F08C7A';
-const mix = (hex, to, k) => '#' + [1,3,5].map(i=>Math.round(parseInt(hex.slice(i,i+2),16)*(1-k) + to*k).toString(16).padStart(2,'0')).join('');
-const dark = (h, k=.2) => mix(h, 0, k), light = (h, k=.3) => mix(h, 255, k);
-const ln = (d, w=3.5, c=INK) => `<path d="${d}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+// 하루 2 데이터. 그림은 pixel*.js (도트), 여기엔 이름·색·문구만
 
-const SKIN  = ['#FBE3CF','#F5D2B5','#E9B994','#D19A72','#A86F4C','#7A4E33'];
-const HAIRC = ['#22201E','#5A3A26','#A8683A','#D9B26A','#2E6B5E','#E58FA0'];
-const SHIRT = ['#B3502A','#2E6B5E','#3D5A99','#E8C547','#F2EDE6','#22201E'];
-
-const H_SHORT = 'M36 98 C34 50 66 26 100 26 C134 26 166 50 164 98 C156 72 140 58 100 56 C60 58 44 72 36 98Z';
-const H_BANGS = 'M36 100 C32 48 66 24 100 24 C134 24 168 48 164 100 C160 88 152 80 146 76 L140 80 L128 68 L114 80 L100 68 L86 80 L72 68 L60 80 L54 76 C48 80 40 88 36 100Z';
-const H_SIDE  = 'M36 104 C30 50 66 24 104 24 C140 26 168 52 164 100 C150 66 120 60 92 50 C76 70 52 78 36 104Z';
-const H_FLAT  = 'M34 108 C30 46 66 26 100 26 C134 26 170 46 166 108 C162 92 156 80 150 76 Q100 70 50 76 C44 80 38 92 34 108Z';
-const H_CURLY = 'M36 104 a14 14 0 0 1 4 -26 a16 16 0 0 1 12 -24 a16 16 0 0 1 22 -14 a16 16 0 0 1 26 -6 a16 16 0 0 1 26 6 a16 16 0 0 1 22 14 a16 16 0 0 1 12 24 a14 14 0 0 1 4 26 C156 74 132 64 100 64 C68 64 44 74 36 104Z';
-const circle = (cx, cy, r) => `M${cx-r} ${cy} a${r} ${r} 0 1 0 ${2*r} 0 a${r} ${r} 0 1 0 ${-2*r} 0Z`;
-// 폭탄 머리: 머리 둘레로 동그라미 9개 + 가운데 큰 원
-const H_AFRO = circle(100,68,62) + Array.from({length:9}, (_,i)=>{ const a = (-200 + i*27.5)*Math.PI/180;
-  return circle(100+58*Math.cos(a), 72+58*Math.sin(a), 26); }).join(' ');
-const backTo = y => `M100 30 C152 30 172 62 172 110 L172 ${y-26} Q172 ${y} 146 ${y} L54 ${y} Q28 ${y} 28 ${y-26} L28 110 C28 62 48 30 100 30Z`;
-const HAIR = [
-  {front:H_SHORT},
-  {front:H_BANGS},
-  {front:H_SIDE},
-  {front:H_FLAT, back:backTo(166)},
-  {front:H_FLAT, back:backTo(214)},
-  {front:H_SHORT, back:'M80 22 a20 20 0 1 0 40 0 a20 20 0 1 0 -40 0Z'},
-  {front:H_SIDE, back:'M146 52 C186 60 194 124 172 168 C166 140 160 110 140 76Z'},               // 포니테일
-  {front:H_BANGS, back:'M44 66 C12 76 8 132 22 156 C30 132 38 106 54 86Z M156 66 C188 76 192 132 178 156 C170 132 162 106 146 86Z'}, // 양갈래
-  {front:H_CURLY},
-  {front:H_CURLY, back:H_AFRO},   // 폭탄 머리
-  {front:''},                     // 대머리
-  // ── 남자 머리 (저장된 번호가 안 밀리게 맨 뒤에 추가) ──
-  // stub = 짧게 민 옆머리(반투명), op = 머리 전체 불투명도, lines = 결 표시 선
-  {front:'M42 78 C40 40 70 22 100 22 C130 22 160 40 158 78 C150 70 140 64 128 66 L120 58 L108 66 L96 58 L84 66 L72 60 C60 64 50 70 42 78Z',
-   stub:'M37 100 C36 82 40 72 47 66 L54 92Z M163 100 C164 82 160 72 153 66 L146 92Z'},                                   // 투블럭
-  {front:'M38 92 C38 52 66 32 100 32 C134 32 162 52 162 92 C150 74 128 66 100 66 C72 66 50 74 38 92Z', op:.6},           // 버즈컷
-  {front:'M34 104 C30 46 66 24 100 24 C134 24 170 46 166 104 C160 92 154 86 144 84 Q132 88 120 84 Q108 88 96 84 Q84 88 72 84 Q62 88 56 84 C46 88 40 94 34 104Z'}, // 댄디컷
-  {front:'M38 96 C34 56 56 30 84 22 C96 10 130 8 146 24 C162 38 166 62 162 96 C156 78 146 66 132 60 C118 52 96 52 80 56 C62 60 46 74 38 96Z',
-   lines:'M86 52 C96 38 118 32 136 38 M98 55 C108 45 124 43 140 49'},                                                    // 포마드
-  {front:'M36 100 C30 48 66 24 102 24 C140 26 168 50 164 100 C158 82 148 72 136 66 C116 60 92 62 74 72 C64 78 58 86 60 94 C54 92 50 86 52 80 C46 86 40 92 36 100Z',
-   lines:'M124 38 C104 44 84 56 72 74'},                                                                                  // 쉼표머리
-  {front:'M38 96 C36 70 40 56 46 48 L44 30 L62 40 L66 18 L82 32 L94 10 L104 30 L120 12 L126 34 L144 22 L142 42 L160 40 L154 56 C160 66 164 80 162 96 C150 72 128 62 100 62 C72 62 50 72 38 96Z'}, // 스파이크
-  {front:H_BANGS, back:'M100 30 C150 30 172 60 172 104 L174 150 L162 142 L164 162 L150 150 L148 166 L52 166 L50 150 L36 162 L38 142 L26 150 L28 104 C28 60 50 30 100 30Z'}, // 울프컷
-];
-
-// 눈: (x, s) s = 왼쪽 -1, 오른쪽 1
-const lash = (x,s) => ln(`M${x-12*s} 97 Q${x} 84 ${x+12*s} 95 l${5*s} -4`, 3.2);
-const EYES = [
-  x => `<ellipse cx="${x}" cy="103" rx="6.5" ry="8.5" fill="${INK}"/><circle cx="${x+2.5}" cy="99.5" r="2.2" fill="#fff"/>`,
-  (x,s) => `<ellipse cx="${x}" cy="104" rx="11" ry="11.5" fill="#fff"/><ellipse cx="${x}" cy="104.5" rx="8.5" ry="10.5" fill="#33408A"/><ellipse cx="${x}" cy="108.5" rx="6" ry="4.5" fill="#6478D8" opacity=".6"/><ellipse cx="${x}" cy="104.5" rx="4" ry="5.5" fill="${INK}"/><circle cx="${x+3}" cy="99.5" r="3" fill="#fff"/><circle cx="${x-3}" cy="109" r="1.4" fill="#fff"/>` + lash(x,s),
-  x => ln(`M${x-9} 106 Q${x} 95 ${x+9} 106`),
-  x => ln(`M${x-9} 103 L${x+9} 103`),
-  x => `<path d="M${x-11} 104 Q${x} 92 ${x+11} 104 Q${x} 112 ${x-11} 104Z" fill="${INK}"/><circle cx="${x+3}" cy="101" r="2.2" fill="#fff"/>`,
-  (x,s) => `<ellipse cx="${x}" cy="104" rx="9.5" ry="11.5" fill="#3A2A22"/><ellipse cx="${x}" cy="108.5" rx="6" ry="4.5" fill="#9A6A48" opacity=".7"/><circle cx="${x+3}" cy="99" r="3.4" fill="#fff"/><circle cx="${x-3.5}" cy="108.5" r="1.8" fill="#fff"/>` + lash(x,s),
-];
-const EYE_SLEEPY = x => ln(`M${x-9} 104 Q${x} 110 ${x+9} 104`);
-// 눈썹 색 = 머리색
-const BROWS = [
-  (x,s,c) => ln(`M${x-10} 85 L${x+10} 85`,3,c),
-  (x,s,c) => ln(`M${x-11} 87 Q${x} 79 ${x+11} 87`,3,c),
-  (x,s,c) => ln(`M${x+10*s} 88 L${x-10*s} 82`,3,c),
-  (x,s,c) => ln(`M${x-11} 87 Q${x} 79 ${x+11} 87`,6,c),
-];
-const MOUTH = [
-  ln('M90 124 Q100 134 110 124',3),
-  ln('M88 124 Q94 131 100 124 Q106 131 112 124',3),
-  ln('M92 128 L108 128',3),
-  `<path d="M88 122 Q100 124 112 122 Q110 140 100 140 Q90 140 88 122Z" fill="${MOUTH_IN}"/><ellipse cx="100" cy="136" rx="6" ry="3.5" fill="#E07A6E"/>`,
-  `<ellipse cx="100" cy="128" rx="5" ry="6.5" fill="${MOUTH_IN}"/>`,
-  `<path d="M86 122 Q100 126 114 122 Q112 138 100 138 Q88 138 86 122Z" fill="${MOUTH_IN}"/><path d="M88.5 123 Q100 126.5 111.5 123 L110.5 127.5 Q100 130 89.5 127.5Z" fill="#fff"/>`,
-];
-const NOSE = [
-  () => '',
-  sk => `<ellipse cx="100" cy="114" rx="2.6" ry="2" fill="${dark(sk,.3)}"/>`,
-  sk => ln('M99 108 Q105 114 99 117',2.5,dark(sk,.3)),
-  sk => `<ellipse cx="100" cy="114" rx="6" ry="4.5" fill="${dark(sk,.1)}"/><ellipse cx="98" cy="112.5" rx="2" ry="1.3" fill="#fff" opacity=".6"/>`,
-];
-const EARS = [12, 9, 15];
-const lens = (fill, op) => `<g fill="${fill}" fill-opacity="${op}" stroke="${INK}" stroke-width="2.5">`;
-const frame = ln('M91 101 Q100 96 109 101',2.5) + ln('M60 99 L42 96',2.5) + ln('M140 99 L158 96',2.5);
-const GLASSES = [
-  '',
-  lens('#fff',.18) + '<circle cx="76" cy="103" r="15"/><circle cx="124" cy="103" r="15"/></g>' + frame,
-  lens('#fff',.18) + '<rect x="60" y="91" width="32" height="24" rx="7"/><rect x="108" y="91" width="32" height="24" rx="7"/></g>' + frame,
-  lens(INK,.88) + '<rect x="60" y="91" width="32" height="24" rx="7"/><rect x="108" y="91" width="32" height="24" rx="7"/></g>' + frame + ln('M66 99 L72 95',2,'rgba(255,255,255,.5)') + ln('M114 99 L120 95',2,'rgba(255,255,255,.5)'),
-];
-const MARKS = [
-  () => '',
-  () => `<circle cx="134" cy="113" r="1.8" fill="${INK}" opacity=".8"/>`,
-  sk => [[60,112],[66,116],[72,112],[128,112],[134,116],[140,112]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="1.4" fill="${dark(sk,.35)}"/>`).join(''),
-  () => `<g transform="rotate(-20 134 116)"><rect x="122" y="111" width="24" height="10" rx="5" fill="#F3D2A6" stroke="#D9B285" stroke-width="1.5"/><rect x="130" y="112.5" width="8" height="7" rx="1.5" fill="#E7B987"/></g>`,
-];
-const OUTFIT_N = 3;   // 티셔츠 / 후드 / 레이어드(긴팔 겹쳐 입기)
-
-// 몸: 레퍼런스 비율(몸 폭 ≈ 머리의 60%) + 짧고 통통한 팔을 살짝 벌림.
-// 오른팔은 평소(arm-rest) / 인사(arm-wave) 두 벌 → 점프할 때만 손 흔들기 (CSS .char.hop)
-// stroke2 = 외곽선 먼저 굵게 → 채움을 위에 (이음새 없는 한 덩어리)
-const stroke2 = (d, w, c, edge) => ln(d, w+4, edge) + ln(d, w, c);
-function body(o, sk, sh, grad){
-  const edge = dark(sh,.25), pants = '#5B5F66';
-  const armC = [sk, sh, light(sh,.55)][o];   // 티셔츠 = 맨팔, 후드 = 옷 색 긴팔, 레이어드 = 밝은 긴팔
-  const armEdge = o===0 ? dark(sk,.18) : edge;
-  const arm = d => stroke2(d, 12, armC, armEdge);
-  const hand = (x,y) => `<circle cx="${x}" cy="${y}" r="7" fill="${sk}" stroke="${dark(sk,.18)}" stroke-width="2"/>`;
-  const sleeve = d => `<path d="${d}" fill="${sh}" stroke="${edge}" stroke-width="2" stroke-linejoin="round"/>`;
-  return `
-  ${stroke2('M89 204 L89 224 M111 204 L111 224', 13, pants, dark(pants,.3))}
-  <ellipse cx="88" cy="229" rx="11" ry="6" fill="${INK}"/><ellipse cx="112" cy="229" rx="11" ry="6" fill="${INK}"/>
-  ${arm('M66 179 L57 196')}${hand(56,198)}
-  <g class="arm-rest">${arm('M134 179 L143 196')}${hand(144,198)}</g>
-  <g class="arm-wave">${arm('M134 166 L150 146')}${hand(152,143)}</g>
-  <path d="M75 150 Q100 144 125 150 L130 207 Q100 213 70 207Z" fill="url(#${grad})" stroke="${edge}" stroke-width="2" stroke-linejoin="round"/>
-  ${o===1
-    ? sleeve('M72 154 Q100 134 128 154 L123 165 Q100 152 77 165Z') + ln('M94 162 L93 182',2,light(sh,.6)) + ln('M106 162 L107 182',2,light(sh,.6))
-    : ln('M88 153 Q100 162 112 153',2,edge)}
-  ${sleeve('M78 151 L61 176 L72 183 L80 168Z')}
-  <g class="arm-rest">${sleeve('M122 151 L139 176 L128 183 L120 168Z')}</g>
-  <g class="arm-wave">${sleeve('M122 151 L144 158 L138 171 L120 168Z')}</g>`;
-}
-
-let uid = 0;   // 썸네일 여러 개가 한 화면에 있어서 그라데이션 id 따로
-function avatar(L, {sleepy=false, cheek=.5, crop='', shadow=true}={}){
-  const id = 'av' + uid++;
-  const H = HAIR[L.hair], hc = HAIRC[L.hairColor], sk = SKIN[L.skin], sh = SHIRT[L.shirt], R = EARS[L.ears];
-  const sides = [[76,-1],[124,1]], eye = sleepy ? EYE_SLEEPY : EYES[L.eyes];
-  const skinLine = `stroke="${dark(sk,.18)}" stroke-width="2"`;
-  const hairLine = `stroke="${dark(hc,.3)}" stroke-width="2" stroke-linejoin="round"`;
-  const box = {face:'26 6 148 156', body:'30 118 140 132'}[crop] || '0 0 200 250';
-  return `<svg class="av" viewBox="${box}" aria-hidden="true">
-    <defs>
-      <radialGradient id="${id}s" cx=".4" cy=".32" r=".75"><stop offset="0" stop-color="${light(sk,.3)}"/><stop offset="1" stop-color="${dark(sk,.06)}"/></radialGradient>
-      <radialGradient id="${id}h" cx=".4" cy=".25" r=".8"><stop offset="0" stop-color="${light(hc,.2)}"/><stop offset="1" stop-color="${dark(hc,.1)}"/></radialGradient>
-      <radialGradient id="${id}c"><stop offset="0" stop-color="${CHEEK}" stop-opacity=".9"/><stop offset="1" stop-color="${CHEEK}" stop-opacity="0"/></radialGradient>
-      <linearGradient id="${id}t" x2="0" y2="1"><stop offset="0" stop-color="${light(sh,.08)}"/><stop offset="1" stop-color="${dark(sh,.14)}"/></linearGradient>
-      <clipPath id="${id}f"><path d="${H.front}"/></clipPath>
-    </defs>
-    ${crop || !shadow ? '' : `<ellipse cx="100" cy="234" rx="34" ry="5" fill="${INK}" opacity=".1"/>`}
-    <g class="av-body">
-      ${H.back ? `<path d="${H.back}" fill="none" ${hairLine.replace('2"','3.5"')}/><path d="${H.back}" fill="url(#${id}h)"/>` : ''}
-      ${crop==='face' ? '' : body(L.outfit, sk, sh, id+'t')}
-      ${[[38,1],[162,-1]].map(([cx,d])=>`<circle cx="${cx}" cy="104" r="${R}" fill="${sk}" ${skinLine}/><ellipse cx="${cx-d*R*.1}" cy="105" rx="${R*.45}" ry="${R*.6}" fill="${dark(sk,.1)}"/>`).join('')}
-      <ellipse cx="100" cy="94" rx="64" ry="60" fill="url(#${id}s)" ${skinLine}/>
-      <g opacity="${cheek}"><ellipse cx="64" cy="118" rx="15" ry="10" fill="url(#${id}c)"/><ellipse cx="136" cy="118" rx="15" ry="10" fill="url(#${id}c)"/></g>
-      ${MARKS[L.marks](sk)}
-      ${sides.map(([x,s])=>BROWS[L.brows](x,s,dark(hc,.1))).join('')}
-      <g class="av-eyes">${sides.map(([x,s])=>eye(x,s)).join('')}</g>
-      ${NOSE[L.nose](sk)}
-      ${MOUTH[L.mouth]}
-      ${GLASSES[L.glasses]}
-      ${H.stub ? `<path d="${H.stub}" fill="${hc}" opacity=".45"/>` : ''}
-      <path d="${H.front}" fill="url(#${id}h)" ${hairLine} opacity="${H.op ?? 1}"/>
-      ${H.lines ? ln(H.lines, 2, dark(hc,.35)) : ''}
-      <path d="M58 46 Q100 24 142 46" clip-path="url(#${id}f)" fill="none" stroke="${light(hc,.45)}" stroke-width="4" stroke-dasharray="10 7" stroke-linecap="round" opacity=".6"/>
-      ${sleepy && !crop ? '<text class="zzz" x="158" y="40">z z</text>' : ''}
-    </g></svg>`;
-}
-// 꾸미기 탭: 모양은 미리보기 썸네일, 색은 동그라미
+// ── 캐릭터 꾸미기 (도트, 6부위). 색은 [기본, 밝은/어두운 쪽] ──
+const PX_SKIN  = [['#FBE3CF','#EBC3A6'],['#F5D2B5','#E2B08C'],['#E9B994','#CF976C'],['#C98E66','#A8704A'],['#8E5C3E','#6E432B']];
+const PX_HAIR  = [['#3A2E28','#5A4A40'],['#6B4428','#8E6240'],['#B0703E','#D49660'],['#E0B866','#F5DA96'],['#2E6B5E','#4C9484'],['#E58FA0','#F7B9C6']];
+const PX_SHIRT = [['#D9673F','#B04E2E'],['#2E8B6E','#22705A'],['#3D5A99','#2E4577'],['#E8C547','#C4A12A'],['#F2EDE6','#D2CABE'],['#4A4240','#2E2826']];
+const HAIR_STYLES = ['짧은 머리','앞머리','가르마','단발','긴 머리','포니테일','양갈래','곱슬','삐죽','민머리'];
 const PARTS = [
-  {k:'hair', label:'헤어', n:HAIR.length},
-  {k:'hairColor', label:'머리색', colors:HAIRC},
-  {k:'eyes', label:'눈', n:EYES.length},
-  {k:'brows', label:'눈썹', n:BROWS.length},
-  {k:'mouth', label:'입', n:MOUTH.length},
-  {k:'nose', label:'코', n:NOSE.length},
-  {k:'skin', label:'피부', colors:SKIN},
-  {k:'ears', label:'귀', n:EARS.length},
-  {k:'glasses', label:'안경', n:GLASSES.length},
-  {k:'marks', label:'점', n:MARKS.length},
-  {k:'outfit', label:'옷', n:OUTFIT_N, crop:'body'},
-  {k:'shirt', label:'옷 색', colors:SHIRT},
+  {k:'hair', label:'헤어', n:HAIR_STYLES.length},
+  {k:'hairColor', label:'머리색', colors:PX_HAIR.map(c => c[0])},
+  {k:'eyes', label:'눈', n:4},
+  {k:'skin', label:'피부', colors:PX_SKIN.map(c => c[0])},
+  {k:'outfit', label:'옷', n:3, crop:'body'},
+  {k:'shirt', label:'옷 색', colors:PX_SHIRT.map(c => c[0])},
 ];
-const DEFAULT_LOOK = {skin:1, hair:1, hairColor:0, eyes:1, brows:1, mouth:1, nose:0, ears:0, glasses:0, marks:0, outfit:0, shirt:0};
+const DEFAULT_LOOK = {hair:1, hairColor:1, eyes:1, skin:1, outfit:0, shirt:0};
+
 // ── 음식 데이터 ────────────────────────────
 // 음식 → 단백질·탄수·채소 (0~2). ponytail: 키워드 표, 실제 서비스는 AI 추정으로 교체
 const FOOD = {
@@ -232,69 +76,21 @@ const MOVE_WORDS = [
 const SUGGEST = ['닭가슴살 밥','비빔밥','샐러드','김밥','제육 덮밥','된장찌개 밥'];
 const NUT = ['단백질','탄수화물','채소'];
 const MEALS = ['아침','점심','저녁','간식'];
-const P = (vb, body) => `<svg viewBox="${vb}" fill="none" stroke="#1E1B18" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">${body}</svg>`;
-// 장식 줄: 가랜드 곡선 위 점들
-const curve = xs => xs.map(x=>{ const t = (x-4)/192; return [x, 6 + 48*t*(1-t)]; });
-const PC = ['#FF9EB8','#FFD23F','#86D9B9','#8EC9FF'];
-const star = (x,y,r) => `M${x} ${y-r} L${x+r*.3} ${y-r*.3} L${x+r} ${y} L${x+r*.3} ${y+r*.3} L${x} ${y+r} L${x-r*.3} ${y+r*.3} L${x-r} ${y} L${x-r*.3} ${y-r*.3}Z`;
-const outlineFill = (shapes, fill) => `<g stroke-width="4">${shapes}</g><g fill="${fill}" stroke="none">${shapes}</g>`;   // 겹친 도형 안쪽 선 없이
-const POT = c => `<path d="M16 46 H44 L40 76 H20Z" fill="${c}"/>`;
-const FLOOR_DOT = c => `<ellipse cx="25" cy="101" rx="14" ry="5" fill="${c}"/>`;
-const CURTAIN = (c, deco = '') => `<path d="M6 4 H26 C24 24 28 44 22 62 C16 60 10 60 4 62 C8 44 4 24 6 4Z M74 4 H54 C56 24 52 44 58 62 C64 60 70 60 76 62 C72 44 76 24 74 4Z" fill="${c}"/>${deco}<path d="M2 4 H78" stroke-width="3"/><path d="M8 40 Q15 44 24 40 M56 40 Q65 44 72 40"/>`;
-const PROPS = [
-  {id:'plant', name:'화분', layer:'floor', kinds:[
-    ['잎 화분', P('0 0 60 80','<path d="M30 46 C18 34 14 20 20 10 C28 18 30 30 30 46Z" fill="#86D9B9"/><path d="M30 46 C40 36 48 26 46 14 C36 20 32 32 30 46Z" fill="#5FC79F"/>'+POT('#E8835F'))],
-    ['선인장', P('0 0 60 80','<path d="M24 34 H18 a4 4 0 0 1 -4 -4 V24 a3 3 0 0 1 6 0 V28 H24" fill="#86D9B9"/><path d="M36 30 H42 a4 4 0 0 0 4 -4 V18 a3 3 0 0 0 -6 0 V24 H36" fill="#86D9B9"/><path d="M24 46 V20 a6 6 0 0 1 12 0 V46Z" fill="#86D9B9"/><circle cx="30" cy="13" r="3" fill="#FF9EB8"/>'+POT('#C9B6F2'))],
-    ['튤립', P('0 0 60 80','<path d="M30 46 V22"/><path d="M30 42 C22 38 20 32 22 28 C28 30 30 36 30 42Z" fill="#5FC79F"/><path d="M22 12 L26 18 L30 10 L34 18 L38 12 V22 C38 28 22 28 22 22Z" fill="#FF9EB8"/>'+POT('#FFD23F'))]]},
-  {id:'rug', name:'러그', layer:'floor', kinds:[
-    ['줄무늬', P('0 0 200 36','<ellipse cx="100" cy="18" rx="96" ry="15" fill="#FFB3C7"/><ellipse cx="100" cy="18" rx="74" ry="9" stroke="#fff" stroke-width="3" stroke-dasharray="6 6"/>')],
-    ['체크', P('0 0 200 36','<rect x="8" y="4" width="184" height="28" rx="6" fill="#8EC9FF"/><path d="M38 4 V32 M68 4 V32 M98 4 V32 M128 4 V32 M158 4 V32 M8 18 H192" stroke="#fff" stroke-width="5"/><rect x="8" y="4" width="184" height="28" rx="6"/>')],
-    ['구름', P('0 0 200 36', outlineFill('<ellipse cx="44" cy="20" rx="38" ry="12"/><ellipse cx="100" cy="16" rx="46" ry="13"/><ellipse cx="156" cy="20" rx="38" ry="12"/>','#C9B6F2'))]]},
-  {id:'frame', name:'액자', layer:'wall', kinds:[
-    ['산', P('0 0 50 60','<path d="M10 14 L25 3 L40 14"/><rect x="4" y="14" width="42" height="42" rx="4" fill="#FFD23F"/><path d="M11 49 L21 33 L29 43 L35 37 L41 49Z" fill="#86D9B9"/><circle cx="35" cy="24" r="4" fill="#fff"/>')],
-    ['하트', P('0 0 50 60','<path d="M10 14 L25 3 L40 14"/><rect x="4" y="14" width="42" height="42" rx="4" fill="#FF9EB8"/><path d="M25 47 C12 38 12 27 19 26 C22 26 24 28 25 30 C26 28 28 26 31 26 C38 27 38 38 25 47Z" fill="#fff"/>')],
-    ['고양이', P('0 0 50 60','<path d="M10 14 L25 3 L40 14"/><rect x="4" y="14" width="42" height="42" rx="4" fill="#8EC9FF"/><path d="M15 34 L16 23 L23 29Z M35 34 L34 23 L27 29Z" fill="#fff"/><circle cx="25" cy="37" r="11" fill="#fff"/><circle cx="21" cy="36" r="1.6" fill="#1E1B18" stroke="none"/><circle cx="29" cy="36" r="1.6" fill="#1E1B18" stroke="none"/>')]]},
-  {id:'lamp', name:'조명', layer:'floor', kinds:[
-    ['스탠드', P('0 0 50 110','<path d="M10 34 L40 34 L34 6 L16 6Z" fill="#FFD23F"/><path d="M25 34 V98" stroke-width="3"/>'+FLOOR_DOT('#1E1B18'))],
-    ['버섯 램프', P('0 0 50 110','<rect x="19" y="68" width="12" height="32" rx="5" fill="#FFF3D6"/><path d="M5 70 C5 50 45 50 45 70Z" fill="#FF9EB8"/><circle cx="16" cy="63" r="3" fill="#fff" stroke="none"/><circle cx="32" cy="60" r="2.5" fill="#fff" stroke="none"/>'+FLOOR_DOT('#1E1B18'))],
-    ['촛불', P('0 0 50 110','<rect x="17" y="72" width="16" height="28" rx="3" fill="#fff"/><path d="M25 72 V66"/><path d="M25 52 C31 59 31 66 25 66 C19 66 19 59 25 52Z" fill="#FFD23F"/>'+FLOOR_DOT('#C9B6F2'))]]},
-  {id:'window', name:'창문', layer:'wall', kinds:[
-    ['네모', P('0 0 60 60','<rect x="4" y="4" width="52" height="52" rx="8" fill="#BFE3FF"/><path d="M30 4 V56 M4 30 H56"/><circle cx="17" cy="17" r="5" fill="#fff" stroke="none"/>')],
-    ['동그라미', P('0 0 60 60','<circle cx="30" cy="30" r="26" fill="#BFE3FF"/><path d="M30 4 V56 M4 30 H56"/><circle cx="18" cy="18" r="5" fill="#fff" stroke="none"/>')],
-    ['아치', P('0 0 60 60','<path d="M6 56 V28 a24 24 0 0 1 48 0 V56Z" fill="#BFE3FF"/><path d="M30 4 V56 M6 34 H54"/><circle cx="20" cy="20" r="4" fill="#fff" stroke="none"/>')]]},
-  {id:'books', name:'소품', layer:'floor', kinds:[
-    ['책', P('0 0 50 44','<rect x="4" y="30" width="42" height="12" rx="2" fill="#8EC9FF"/><rect x="8" y="18" width="36" height="12" rx="2" fill="#FF9EB8"/><rect x="6" y="6" width="38" height="12" rx="2" fill="#FFD23F"/>')],
-    ['곰인형', P('0 0 50 44','<ellipse cx="25" cy="35" rx="12" ry="8" fill="#C98B5A"/><circle cx="14" cy="10" r="5" fill="#C98B5A"/><circle cx="36" cy="10" r="5" fill="#C98B5A"/><circle cx="25" cy="17" r="11" fill="#C98B5A"/><ellipse cx="25" cy="21" rx="4" ry="3" fill="#F1D7BD"/><circle cx="21" cy="15" r="1.4" fill="#1E1B18" stroke="none"/><circle cx="29" cy="15" r="1.4" fill="#1E1B18" stroke="none"/>')],
-    ['게임기', P('0 0 50 44','<rect x="5" y="16" width="40" height="24" rx="9" fill="#8EC9FF"/><path d="M12 28 H20 M16 24 V32"/><circle cx="32" cy="26" r="2.6" fill="#FF9EB8"/><circle cx="38" cy="31" r="2.6" fill="#FFD23F"/>')]]},
-  {id:'garland', name:'장식', layer:'wall', kinds:[
-    ['가랜드', P('0 0 200 40','<path d="M4 6 Q100 54 196 6"/>' + curve([24,52,80,108,136,164]).map(([x,y],i)=>`<path d="M${x-9} ${y} L${x+9} ${y} L${x} ${y+16}Z" fill="${PC[i%4]}"/>`).join(''))],
-    ['전구줄', P('0 0 200 40','<path d="M4 6 Q100 54 196 6"/>' + curve([24,48,72,100,128,152,176]).map(([x,y],i)=>`<rect x="${x-3}" y="${y}" width="6" height="4" fill="#1E1B18"/><ellipse cx="${x}" cy="${y+10}" rx="5" ry="7" fill="${PC[i%4]}"/>`).join(''))],
-    ['별', P('0 0 200 40', curve([30,70,100,130,170]).map(([x,y],i)=>`<path d="M${x} 0 V${y+4}"/><path d="${star(x,y+12,9)}" fill="${['#FFD23F','#FF9EB8','#FFD23F','#8EC9FF','#FFD23F'][i]}"/>`).join(''))]]},
-  // ── 새 칸. 벽지·바닥은 그림 대신 면 무늬(세 번째 값) ──
-  {id:'wallpaper', name:'벽지', layer:'plane', kinds:[
-    ['줄무늬', '', 'background:repeating-linear-gradient(90deg,#FFE0EA 0 16px,#FFF3D6 16px 32px)'],
-    ['체크', '', 'background:repeating-conic-gradient(#DDEEFF 0 25%,#FFF8EC 0 50%) 0 0/32px 32px'],
-    ['별빛', '', 'background:radial-gradient(#FFD23F 2px,transparent 2.6px) 0 0/22px 22px,radial-gradient(#fff 1.4px,transparent 2px) 11px 11px/22px 22px,#CDEFE0']]},
-  {id:'floor', name:'바닥', layer:'plane', kinds:[
-    ['나무', '', 'background:repeating-linear-gradient(0deg,#E6B07A 0 22px,#D49A62 22px 24px)'],
-    ['타일', '', 'background:repeating-conic-gradient(#F7E3C6 0 25%,#E9C99E 0 50%) 0 0/36px 36px'],
-    ['민트', '', 'background:radial-gradient(rgba(30,27,24,.08) 1.6px,transparent 2px) 0 0/16px 16px,#BDE8D3']]},
-  {id:'curtain', name:'커튼', layer:'wall', kinds:[
-    ['분홍', P('0 0 80 66', CURTAIN('#FF9EB8'))],
-    ['노랑 체크', P('0 0 80 66', CURTAIN('#FFD23F', '<path d="M8 16 H22 M7 30 H24 M58 16 H72 M56 30 H73" stroke="#fff" stroke-width="3"/>'))],
-    ['하늘 땡땡이', P('0 0 80 66', CURTAIN('#8EC9FF', [[14,14],[12,30],[16,52],[66,14],[68,30],[64,52]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="2.6" fill="#fff" stroke="none"/>`).join('')))]]},
-  {id:'chair', name:'의자', layer:'floor', kinds:[
-    ['나무 의자', P('0 0 50 64','<rect x="10" y="4" width="30" height="30" rx="8" fill="#E8A86A"/><path d="M12 42 V62 M38 42 V62" stroke-width="4"/><rect x="5" y="32" width="40" height="10" rx="4" fill="#C98B5A"/>')],
-    ['민트 의자', P('0 0 50 64','<rect x="10" y="4" width="30" height="30" rx="14" fill="#86D9B9"/><path d="M12 42 V62 M38 42 V62" stroke-width="4"/><rect x="5" y="32" width="40" height="10" rx="5" fill="#5FC79F"/>')],
-    ['빈백', P('0 0 50 64','<path d="M6 60 C2 44 10 26 25 26 C40 26 48 44 44 60Z" fill="#C9B6F2"/><path d="M14 44 Q25 38 36 44" stroke-dasharray="3 4"/>')]]},
-  {id:'clock', name:'시계', layer:'wall', kinds:[
-    ['동그라미', P('0 0 40 40','<circle cx="20" cy="20" r="16" fill="#fff"/><path d="M20 20 V10 M20 20 L27 24"/><circle cx="20" cy="20" r="1.6" fill="#1E1B18"/>')],
-    ['노랑', P('0 0 40 40','<rect x="4" y="4" width="32" height="32" rx="10" fill="#FFD23F"/><path d="M20 20 V11 M20 20 L26 20"/><circle cx="20" cy="20" r="1.6" fill="#1E1B18"/>')],
-    ['뻐꾸기', P('0 0 40 40','<path d="M6 18 L20 4 L34 18 V36 H6Z" fill="#E8A86A"/><circle cx="20" cy="24" r="7" fill="#fff"/><path d="M20 24 V19 M20 24 L23 26"/><circle cx="20" cy="12" r="2.4" fill="#FF9EB8"/>')]]},
-  {id:'desktop', name:'책상 위', layer:'floor', kinds:[
-    ['어항', P('0 0 40 36','<path d="M8 10 H32 C38 18 36 32 20 34 C4 32 2 18 8 10Z" fill="#BFE3FF"/><path d="M14 22 C18 18 24 18 26 22 C24 26 18 26 14 22Z M26 22 L30 19 V25Z" fill="#FF9EB8"/>')],
-    ['라디오', P('0 0 40 36','<path d="M10 12 L28 2"/><rect x="3" y="12" width="34" height="22" rx="5" fill="#FF9EB8"/><circle cx="13" cy="23" r="5" fill="#fff"/><path d="M24 19 H32 M24 24 H32 M24 29 H30"/>')],
-    ['머그컵', P('0 0 40 36','<path d="M16 10 Q14 6 16 2 M22 10 Q20 6 22 2" stroke="#A9ACA5"/><rect x="9" y="12" width="20" height="22" rx="4" fill="#FFD23F"/><path d="M29 17 q7 0 7 6 q0 6 -7 6"/>')]]},
+
+const PROPS = [   // 소품 칸. 그림은 pixel-room.js 의 ITEM_ART
+  {id:'plant', name:'화분', kinds:['잎 화분','선인장','튤립']},
+  {id:'rug', name:'러그', kinds:['줄무늬','체크','구름']},
+  {id:'frame', name:'액자', kinds:['산','하트','고양이']},
+  {id:'lamp', name:'조명', kinds:['스탠드','버섯 램프','촛불']},
+  {id:'window', name:'창문', kinds:['네모','동그라미','아치']},
+  {id:'books', name:'소품', kinds:['책','곰인형','게임기']},
+  {id:'garland', name:'장식', kinds:['가랜드','전구줄','별']},
+  {id:'wallpaper', name:'벽지', plane:true, kinds:['줄무늬','체크','별빛']},
+  {id:'floor', name:'바닥', plane:true, kinds:['나무','타일','민트']},
+  {id:'curtain', name:'커튼', kinds:['분홍','노랑 체크','하늘 땡땡이']},
+  {id:'chair', name:'의자', kinds:['나무 의자','민트 의자','빈백']},
+  {id:'clock', name:'시계', kinds:['동그라미','노랑','뻐꾸기']},
+  {id:'desktop', name:'책상 위', kinds:['어항','라디오','머그컵']},
 ];
 // 얻는 순서: 칸마다 첫 번째 종류부터, 그다음 두 번째, 세 번째. 화분은 첫 시작에서 하나 고른다
 const ITEM_ORDER = [0, 1, 2].flatMap(k => ['window','rug','frame','lamp','wallpaper','curtain','books','clock','chair','floor','desktop','garland','plant']
@@ -372,35 +168,7 @@ const PAST = {
 };
 const MOODS = [['good','좋았어'],['soso','보통'],['hard','힘들었어']];
 
-// ── 방 그림 ───────────────────────────────
-const BED = P('0 0 170 110','<rect x="4" y="14" width="26" height="86" rx="10" fill="#E8A86A"/><rect x="20" y="52" width="146" height="44" rx="10" fill="#FFF3D6"/><path d="M62 50 H156 a10 10 0 0 1 10 10 V88 a8 8 0 0 1 -8 8 H62Z" fill="#FF9EB8"/><path d="M62 50 V96" stroke-dasharray="4 5"/><rect x="28" y="36" width="36" height="24" rx="10" fill="#fff"/><path d="M28 96 V106 M158 96 V106" stroke-width="5"/>');
-const DESK = P('0 0 140 120','<rect x="6" y="46" width="128" height="10" rx="3" fill="#E8A86A"/><path d="M16 56 V116 M124 56 V116" stroke-width="5"/><rect x="84" y="56" width="40" height="34" fill="#F4C78F"/><path d="M84 73 H124"/><circle cx="104" cy="65" r="1.5" fill="#1E1B18"/><circle cx="104" cy="82" r="1.5" fill="#1E1B18"/><rect x="20" y="30" width="16" height="16" rx="2" fill="#8EC9FF"/><path d="M24 30 L22 18 M30 30 L33 16"/><rect x="48" y="38" width="30" height="8" rx="1" fill="#FFD23F"/>');
 const SKY = {morning:'#CFEBFF', noon:'#A9DBFF', evening:'#FFB98A', night:'#2B3566'};
-const WINDOW_CLIP = ['<rect x="4" y="4" width="52" height="52" rx="8"/>','<circle cx="30" cy="30" r="26"/>','<path d="M6 56 V28 a24 24 0 0 1 48 0 V56Z"/>'];
-const CLOUD = (x, y) => `<g fill="#fff" stroke="none"><ellipse cx="${x}" cy="${y}" rx="9" ry="5"/><ellipse cx="${x+7}" cy="${y-3}" rx="7" ry="5"/></g>`;
-const WEATHER_ART = {
-  clear:'',
-  cloud:CLOUD(18,22)+CLOUD(36,38),
-  rain:CLOUD(20,16)+CLOUD(38,14)+'<g stroke="#5D8FD0" stroke-width="2" class="fall"><path d="M14 28 l-2 7 M26 26 l-2 7 M38 28 l-2 7 M20 40 l-2 7 M32 42 l-2 7 M44 38 l-2 7"/></g>',
-  snow:CLOUD(20,14)+'<g fill="#fff" stroke="none" class="fall"><circle cx="14" cy="28" r="2"/><circle cx="28" cy="24" r="2"/><circle cx="42" cy="30" r="2"/><circle cx="20" cy="42" r="2"/><circle cx="36" cy="44" r="2"/></g>',
-};
-const windowArt = (kind, time, weather) => {
-  const body = WINDOW_CLIP[kind] ?? WINDOW_CLIP[0];
-  const sun = time === 'night'
-    ? '<circle cx="42" cy="16" r="6" fill="#FFF3C4" stroke="none"/><circle cx="14" cy="14" r="1.2" fill="#fff" stroke="none"/><circle cx="24" cy="24" r="1" fill="#fff" stroke="none"/>'
-    : weather === 'clear' || weather === 'cloud' ? `<circle cx="${time==='evening'?46:16}" cy="${time==='evening'?42:16}" r="7" fill="#FFD23F" stroke="none"/>` : '';
-  const id = 'w' + uid++;
-  return P('0 0 60 60', `<clipPath id="${id}">${body}</clipPath><g clip-path="url(#${id})"><rect width="60" height="60" fill="${SKY[time]}" stroke="none"/>${sun}${WEATHER_ART[weather] ?? ''}</g><g fill="none">${body}</g><path d="M30 4 V56 M4 30 H56" clip-path="url(#${id})"/>`);
-};
-const HELD = {
-  book:'<path d="M2 6 L14 9 L26 6 V22 L14 25 L2 22Z" fill="#8EC9FF"/><path d="M14 9 V25"/>',
-  pencil:'<path d="M4 24 L8 15 L20 3 L25 8 L13 20Z" fill="#FFD23F"/><path d="M8 15 L13 20"/>',
-  can:'<rect x="9" y="10" width="14" height="14" rx="3" fill="#86D9B9"/><path d="M9 14 L2 9 M23 13 q5 2 2 7"/>',
-  music:'<path d="M9 22 V6 L23 3 V19"/><circle cx="6" cy="22" r="3.5" fill="#FF9EB8"/><circle cx="20" cy="19" r="3.5" fill="#FF9EB8"/>',
-  star:'<path d="'+star(14,14,12)+'" fill="#FFD23F"/>',
-};
-const heldArt = id => id ? P('0 0 28 28', HELD[id]) : '';
-const NOTE = P('0 0 44 38','<path d="M4 6 L38 3 L41 32 L7 35Z" fill="#FFF3C4"/><path d="M11 13 L33 11 M12 20 L34 18 M13 27 L26 26"/>');
 
 // 기록 시트를 닫을 때 캐릭터의 한마디. 평가하지 않고 자기 이야기를 한다
 const AFTER_RECORD = {
@@ -430,7 +198,7 @@ const PARK = {
   casual:{walk:['{s} 공원 냄새 좋다!','한 바퀴 더 돌자!'], bench:['벤치에 앉아서 쉬자','여기 앉으면 다 보여!'], leaf:['이거 주웠어! 예쁘지?','오늘의 보물 발견!'], sky:['구름 모양 봐!','하늘 진짜 넓다'], friend:'{n}도 나와 있네!'},
   polite:{walk:['{s} 공원이 좋네요','천천히 걸어요'], bench:['벤치에 잠깐 앉아요','바람이 시원해요'], leaf:['예쁜 걸 하나 주웠어요','이건 방에 둘까요?'], sky:['구름이 천천히 가요','하늘이 맑아요'], friend:'{n}도 나와 있어요'},
 };
-const PARK_SPOTS = {walk:{x:34, y:80}, bench:{x:70, y:76}, leaf:{x:50, y:90}, sky:{x:56, y:82}};
+const PARK_SPOTS = {walk:{x:36, y:92}, bench:{x:64, y:72}, leaf:{x:30, y:73}, sky:{x:47, y:66}};   // 발 위치 (%), 공원 100×122칸 기준
 const SHOP_LINE = {casual:'이거 우리 방에 두자!', polite:'방에 잘 어울릴 것 같아요'};
 const VISIT_LINE = {casual:['우와, 여기 좋다!','이 방 따뜻하다'], polite:['방이 참 아늑해요','여기 오니까 좋네요']};
 const GIFT_LINE = {casual:n => `${n}한테서 선물이 왔어!`, polite:n => `${n}에게서 선물이 왔어요`};
@@ -447,13 +215,13 @@ const NEWS = {
 // ── 캐릭터끼리 만남 (A: 마을의 핵심) ──
 // {r} = 상대 이름 + 이랑/랑. pair = 공원에서 둘이 서는 자리 (%, 장면 기준). place 가 town 이면 거리에서 보임
 const MEET_EVENTS = [
-  {id:'bench',  place:'park', pair:[{x:62, y:76}, {x:80, y:76}],
+  {id:'bench',  place:'park', pair:[{x:57, y:72}, {x:71, y:72}],
     past:{casual:'{r} 벤치에 같이 앉아 있었어', polite:'{r} 벤치에 같이 앉아 있었어요'}, now:{casual:'{r} 벤치에 앉아 있어!', polite:'{r} 벤치에 앉아 있어요'}, feed:'공원 벤치에 같이 앉아 있었어요'},
-  {id:'treasure', place:'park', pair:[{x:22, y:78}, {x:38, y:82}],
+  {id:'treasure', place:'park', pair:[{x:28, y:73}, {x:40, y:76}],
     past:{casual:'{r} 나무 밑에서 보물찾기 했어', polite:'{r} 나무 밑에서 보물찾기 했어요'}, now:{casual:'{r} 보물찾기 중이야!', polite:'{r} 보물찾기 하고 있어요'}, feed:'나무 밑에서 보물찾기를 했어요'},
-  {id:'clouds', place:'park', pair:[{x:30, y:92}, {x:48, y:94}],
+  {id:'clouds', place:'park', pair:[{x:32, y:93}, {x:46, y:95}],
     past:{casual:'{r} 구름 모양 맞히기 했어', polite:'{r} 구름 모양 맞히기를 했어요'}, now:{casual:'{r} 구름 모양 맞히는 중!', polite:'{r} 구름 모양을 맞히고 있어요'}, feed:'구름 모양 맞히기를 했어요'},
-  {id:'pond',   place:'park', pair:[{x:38, y:80}, {x:53, y:83}],
+  {id:'pond',   place:'park', pair:[{x:46, y:82}, {x:56, y:86}],
     past:{casual:'{r} 연못 구경했어', polite:'{r} 연못을 구경했어요'}, now:{casual:'{r} 연못 보고 있어!', polite:'{r} 연못을 보고 있어요'}, feed:'연못 구경을 했어요'},
   {id:'shop',   place:'town',
     past:{casual:'{r} 가게에서 같은 걸 구경했어', polite:'{r} 가게에서 같은 물건을 구경했어요'}, now:{casual:'{r} 가게 앞에서 만났어!', polite:'{r} 가게 앞에서 만났어요'}, feed:'가게에서 같은 물건을 구경했어요'},

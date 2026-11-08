@@ -300,11 +300,45 @@ dialog{background:var(--bg);border:2px solid var(--ink);border-bottom:0}
 .art-svg [data-place]:hover,.art-svg [data-place]:focus-visible{filter:drop-shadow(0 0 0 var(--ink)) brightness(1.05)}
 .art-svg [data-place]:focus-visible{filter:drop-shadow(2px 2px 0 var(--accent))}
 .scene--town{flex:none;height:auto;min-height:0;aspect-ratio:390/320}
-.scene--town .actor{width:15cqw}
 .town-hint{margin-top:12px;font-size:14px;font-weight:500;text-align:center}
-.scene--park{flex:none;height:auto;min-height:0;aspect-ratio:360/440;width:min(calc(100% - 40px),calc((100dvh - 190px)*.818));margin:12px auto 0}
-.scene--park .actor{width:21cqw}
-.scene--park .bubble{top:calc(var(--y)*1cqh - 26cqw)}
+.scene--park{flex:none;height:auto;min-height:0;aspect-ratio:100/122;width:min(calc(100% - 40px),calc((100dvh - 190px)*.818));margin:12px auto 0}
 @media (min-width:600px) and (hover:hover) and (pointer:fine){ .scene--park{width:min(calc(100% - 40px),calc((var(--ph) - 230px)*.818))} }
 #parkPage .scene--park{margin-top:auto}   /* 공원 그림을 화면 가운데쯤으로 */
 #parkPage .park__sub{margin-bottom:auto}
+/* ── 도트 ── */
+.px{image-rendering:pixelated;image-rendering:crisp-edges;display:block;width:100%;height:auto;-webkit-user-drag:none;user-select:none}
+.av--crop{position:relative;display:block;width:100%;overflow:hidden}
+.av--crop img{position:absolute;left:0;width:100%;max-width:none}
+
+/* ── 도트 장면: 모두 가로 100칸, 비율 고정. 캐릭터 20칸 = 장면 폭 20% ── */
+.scene-img{position:absolute;inset:0;width:100%;height:100%}
+.scene{flex:none;height:auto;min-height:0;aspect-ratio:100/122;width:min(100%,calc((100dvh - 250px)*.82));margin:0 auto;background:#FFF3D6}
+.actor{width:20cqw}
+.bubble{top:calc(var(--y)*1cqh - 27cqw)}
+.is-lying ~ .bubble{top:calc(var(--y)*1cqh - 16cqw)}
+.is-lying .char{transform:rotate(-90deg)}
+.held{left:62%;top:60%;width:35%}
+.note{width:9cqw}
+.char .av{animation:pxbob 2.4s steps(1) infinite}
+@keyframes pxbob{50%{transform:translateY(3.85%)}}   /* 한 칸 숨쉬기 */
+@media (prefers-reduced-motion:reduce){.char .av{animation:none}}
+.scene--mini{height:clamp(190px,28dvh,240px);width:auto;margin:12px auto 0}
+.scene--first{width:min(calc(100% - 40px),calc((100dvh - 330px)*.82));margin:0 auto}
+.scene--visit{width:min(calc(100% - 40px),calc((100dvh - 230px)*.82));margin:12px auto 0}
+.scene--town{aspect-ratio:100/82;width:calc(100% - 40px);margin:12px 20px 0}
+.hot{position:absolute;z-index:4;border-radius:10px}
+.hot:focus-visible{outline:3px solid var(--accent);outline-offset:-2px}
+.pcard__img .kind{width:100%;height:56px;object-fit:contain}
+.shop-item .pcard__img .kind{height:96px}
+@media (min-width:600px) and (hover:hover) and (pointer:fine){
+  .scene{width:min(100%,calc((var(--ph) - 300px)*.82))}
+  .scene--first{width:min(calc(100% - 40px),calc((var(--ph) - 380px)*.82))}
+  .scene--visit{width:min(calc(100% - 40px),calc((var(--ph) - 280px)*.82))}
+  .scene--town{width:calc(100% - 40px)}
+  .scene--mini{width:auto}
+}
+.sign{position:absolute;z-index:5;transform:translate(-50%,-50%);padding:0 7px;border:2px solid #3B2A20;border-radius:6px;background:#fff;color:#3B2A20;font-size:11px;font-weight:700;line-height:1.5;white-space:nowrap;pointer-events:none}
+.scene--park{width:min(calc(100% - 40px),calc((100dvh - 190px)*.82));margin:12px auto 0}
+#parkPage .scene--park{margin-top:auto}
+@media (min-width:600px) and (hover:hover) and (pointer:fine){ .scene--park{width:min(calc(100% - 40px),calc((var(--ph) - 230px)*.82))} }
+@media (min-width:600px) and (hover:hover) and (pointer:fine){ .app{background:var(--bg)} }

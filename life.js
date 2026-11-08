@@ -112,7 +112,7 @@ function shopItem(c, today){
   const owned = ownedItems(c, today), left = ALL_ITEMS.filter(k => !owned.has(k));
   return left.length ? left[hash(`${c.seed}|shop|${today}`) % left.length] : null;
 }
-const itemOf = key => { const [id, k] = key.split(':'); const p = PROPS.find(x => x.id === id); return {p, k:+k, name:p.kinds[+k][0]}; };
+const itemOf = key => { const [id, k] = key.split(':'); const p = PROPS.find(x => x.id === id); return {p, k:+k, name:p.kinds[+k]}; };
 
 const seasonOf = key => { const m = +key.slice(5, 7); return m >= 3 && m <= 5 ? 'spring' : m >= 6 && m <= 8 ? 'summer' : m >= 9 && m <= 11 ? 'autumn' : 'winter'; };
 
