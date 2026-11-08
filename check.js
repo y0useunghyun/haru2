@@ -3,7 +3,7 @@ const vm = require('vm'), fs = require('fs'), assert = require('assert');
 const ctx = vm.createContext({btoa, atob, TextEncoder, TextDecoder, console});
 for (const f of ['data.js', 'life.js']) vm.runInContext(fs.readFileSync(`${__dirname}/${f}`, 'utf8'), ctx, {filename:f});
 const run = code => vm.runInContext(code, ctx);
-const L = run('({activityFor, interestsOn, growInterests, together, awayLog, daysBetween, addDays, ownedItems, shopItem, ITEM_ORDER, ALL_ITEMS, parseRecord, isEmptyParse, toCode, readCode, roomData, seasonOf, cleanLook, DEFAULT_LOOK})');
+const L = run('({activityFor, interestsOn, growInterests, together, awayLog, daysBetween, addDays, ownedItems, shopItem, ITEM_ORDER, ALL_ITEMS, parseRecord, isEmptyParse, toCode, readCode, roomData, seasonOf, cleanLook, DEFAULT_LOOK, meetingOn, withRang})');
 const eq = (a, b) => assert.deepStrictEqual(JSON.parse(JSON.stringify(a)), b);
 
 const c = {seed:12345, personality:'calm', born:'2026-10-01', visitDays:1, days:{}};
@@ -81,4 +81,13 @@ assert.strictEqual(L.readCode(L.toCode('gift', {f:'a', s:1, t:2, g:99, d:today})
 
 assert.strictEqual(L.seasonOf('2026-11-08'), 'autumn');
 assert.strictEqual(L.seasonOf('2027-01-02'), 'winter');
+// 만남: 양쪽에서 같은 결과, 만나기 전 날짜엔 없음, 열흘이면 몇 번은 만남
+const A = {seed:11, born:'2026-10-01'}, B = {seed:9999, born:'2026-10-20'};
+const days10 = Array.from({length:10}, (_, i) => L.addDays('2026-11-01', i));
+assert.ok(days10.every(d => L.meetingOn(A, B, d) === L.meetingOn(B, A, d)));
+assert.strictEqual(L.meetingOn(A, B, '2026-10-10'), null);
+const met = days10.filter(d => L.meetingOn(A, B, d)).length;
+assert.ok(met >= 1 && met <= 8, `만난 날 ${met}`);
+assert.strictEqual(L.withRang('콩이'), '콩이랑');
+assert.strictEqual(L.withRang('하늘'), '하늘이랑');
 console.log('check.js ok');

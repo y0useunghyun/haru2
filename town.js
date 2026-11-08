@@ -1,97 +1,81 @@
 // 하루 2 마을: 공원·가게·게시판·친구 집. app.js 다음에 불러옴.
 // 친구 방은 서버 없이 코드(글자)로 주고받는다. 코드에는 방·캐릭터만 들어가고 잠·식사 기록은 안 들어간다.
 
-const season = () => SEASONS[seasonOf(TODAY)];
 const fmtDay = key => { const [, m, d] = key.split('-').map(Number); return `${m}월 ${d}일`; };
 const fill = (s, map) => s.replace(/\{(\w)\}/g, (_, k) => map[k] ?? '');
 const friendNow = f => activityFor(f.room, TODAY, hourNow(), tick);
 
-// ── 그림 ──
-const TREE = s => P('0 0 70 100', `<path d="M35 96 V58" stroke-width="5"/><g fill="${s.leaf}">${s === SEASONS.winter
-  ? '<path d="M35 10 L58 58 H12Z"/>' : '<circle cx="35" cy="34" r="24"/><circle cx="18" cy="48" r="14"/><circle cx="52" cy="48" r="14"/>'}</g>`);
-const BENCH = P('0 0 90 44', '<rect x="4" y="6" width="82" height="10" rx="3" fill="#E8A86A"/><rect x="2" y="20" width="86" height="8" rx="3" fill="#C98B5A"/><path d="M12 28 V42 M78 28 V42" stroke-width="4"/>');
-const POND = P('0 0 120 30', '<ellipse cx="60" cy="15" rx="56" ry="12" fill="#BFE3FF"/><path d="M34 14 q6 -4 12 0 M70 18 q6 -4 12 0" stroke="#fff"/>');
-// 잔디 위 길 + 계절 흩뿌림 (봄 꽃잎, 여름 꽃, 가을 낙엽, 겨울 눈)
-const SCATTER = [[18,30],[44,70],[70,24],[96,86],[120,40],[150,78],[176,28],[188,92],[30,96],[132,100],[84,52],[160,56]];
-const SEASON_DOT = {
-  spring:(x, y) => `<ellipse cx="${x}" cy="${y}" rx="3" ry="2" fill="#FF9EB8" stroke="none" transform="rotate(30 ${x} ${y})"/>`,
-  summer:(x, y) => `<circle cx="${x}" cy="${y}" r="2.6" fill="#FFD23F" stroke="#fff" stroke-width="1.6"/>`,
-  autumn:(x, y) => `<path d="M${x} ${y-4} L${x+3} ${y} L${x} ${y+4} L${x-3} ${y}Z" fill="#E8835F" stroke="none"/>`,
-  winter:(x, y) => `<circle cx="${x}" cy="${y}" r="2.4" fill="#fff" stroke="#CFD6E0" stroke-width="1"/>`,
-};
-const parkGround = key => `<svg class="park-ground" viewBox="0 0 200 110" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-  <path d="M-10 118 C40 70 120 80 150 40 S200 0 214 -4" fill="none" stroke="${SEASONS[key].ground}" stroke-width="22" stroke-linecap="round"/>
-  ${SCATTER.map(([x, y]) => SEASON_DOT[key](x, y)).join('')}</svg>`;
-const SKY_CLOUDS = `<span class="fx fx--cloud1">${P('0 0 40 20', '<ellipse cx="16" cy="12" rx="14" ry="7" fill="#fff" stroke="none"/><ellipse cx="26" cy="9" rx="10" ry="7" fill="#fff" stroke="none"/>')}</span>
-  <span class="fx fx--cloud2">${P('0 0 40 20', '<ellipse cx="16" cy="12" rx="14" ry="7" fill="#fff" stroke="none"/><ellipse cx="26" cy="9" rx="10" ry="7" fill="#fff" stroke="none"/>')}</span>`;
-const PLACE_ICON = {
-  park:  s => TREE(s),
-  shop:  () => P('0 0 70 70', '<rect x="8" y="26" width="54" height="40" fill="#FFF3D6"/><path d="M4 26 L12 8 H58 L66 26Z" fill="#FF9EB8"/><path d="M22 8 L19 26 M35 8 V26 M48 8 L51 26" stroke="#fff" stroke-width="3"/><rect x="26" y="40" width="18" height="26" fill="#8EC9FF"/>'),
-  board: () => P('0 0 70 70', '<path d="M16 50 V68 M54 50 V68" stroke-width="4"/><rect x="6" y="8" width="58" height="42" rx="4" fill="#E8A86A"/><rect x="12" y="14" width="20" height="16" fill="#fff"/><rect x="36" y="16" width="22" height="12" fill="#FFD23F"/><rect x="18" y="33" width="26" height="12" fill="#86D9B9"/>'),
-};
-function townArt(){
-  const s = season(), time = timeOf(hourNow());
-  const inner = svg => svg.replace(/<\/?svg[^>]*>/g, '');
-  return `<div class="scene__base"><svg class="town-svg" viewBox="0 0 300 200" preserveAspectRatio="xMidYMax slice" fill="none" stroke="#1E1B18" stroke-width="2" stroke-linejoin="round">
-      <rect width="300" height="200" fill="${SKY[time]}" stroke="none"/>
-      <path d="M-10 140 Q80 100 160 130 T310 118 V200 H-10Z" fill="${s.grass}"/>
-      <rect x="-4" y="160" width="308" height="44" fill="${s.ground}"/>
-      <g transform="translate(232 62) scale(.9)">${inner(TREE(s))}</g>
-      <g transform="translate(196 50) scale(1.1)">${inner(TREE(s))}</g>
-      <g transform="translate(10 74) scale(1.25)">${inner(PLACE_ICON.shop())}</g>
-      <g transform="translate(116 96) scale(.95)">${inner(PLACE_ICON.board())}</g>
-    </svg></div>
-    <div class="actor actor--static" style="--x:52;--y:96"><div class="char">${avatar(state.look, {shadow:false})}</div></div>
-    <div class="night" data-time="${time}"></div>`;
+// ── 만남 ──
+const me = () => ({seed:state.seed, born:state.born});
+// 친구별 그날 만남. 친구를 알게 된 날(at) 이후만
+const meetOf = (f, date) => date >= f.at ? meetingOn(me(), f.room, date) : null;
+const metToday = f => meetsNow(hourNow()) ? meetOf(f, TODAY) : null;
+// 최근 만남 목록 (오늘은 낮부터), 최근 것 먼저
+function recentMeets(days = 7){
+  return Array.from({length:days}, (_, i) => addDays(TODAY, -i)).flatMap(date =>
+    state.friends.map(f => ({f, date, ev:date === TODAY ? metToday(f) : meetOf(f, date)})).filter(x => x.ev));
 }
+const meetLine = (x, reg = register()) => fill((x.date === TODAY ? x.ev.now : x.ev.past)[reg], {r:withRang(x.f.room.name)});
+// 친구별 처음 만난 날 (기억에 쓰임). ponytail: 최대 60일만 거슬러 봄
+const firstMeet = f => { for (let d = f.at; d <= TODAY && daysBetween(f.at, d) < 60; d = addDays(d, 1)) if (d === TODAY ? metToday(f) : meetOf(f, d)) return d; return null; };
 
-// ── 마을 ──
+// ── 마을 거리: 건물을 눌러 들어간다. 오늘 거리에서 만난 친구가 같이 서 있다 ──
+const TOWN_SPOTS = [{x:44, y:93}, {x:60, y:94}, {x:74, y:93}];
 function drawTown(){
-  const walking = state.friends.filter(f => friendNow(f) === 'walk');
-  const shopSub = state.shopDay === TODAY ? '내일 또 와요' : shopItem(state, TODAY) ? '오늘의 물건' : '다 모았어요';
-  $('townArt').innerHTML = townArt();
+  const time = timeOf(hourNow()), key = seasonOf(TODAY);
+  const here = state.friends.filter(f => metToday(f)?.place === 'town').slice(0, 2);
+  const walking = state.friends.filter(f => friendNow(f) === 'walk' || metToday(f)?.place === 'park');
+  const shopSub = state.shopDay === TODAY ? '오늘 물건은 받아 왔어요' : shopItem(state, TODAY) ? '가게에 오늘의 물건이 있어요' : '';
+  $('townArt').innerHTML = `<div class="scene__base">${townSvg(key, time)}</div>
+    ${[state, ...here.map(f => f.room)].map((c, i) => `<div class="actor actor--static" style="--x:${TOWN_SPOTS[i].x};--y:${TOWN_SPOTS[i].y}"><div class="char">${avatar(c.look, {shadow:false})}</div></div>`).join('')}
+    <div class="night" data-time="${time}"></div>`;
+  const meets = recentMeets(1);
   $('townBody').innerHTML = `
-    <div class="places">
-      <button type="button" class="pcard" data-place="park"><span class="pcard__img">${PLACE_ICON.park(season())}</span><b>공원</b>
-        <span class="pcard__st">${walking.length ? `${esc(walking[0].room.name)} 산책 중` : `${season().label} 공원`}</span></button>
-      <button type="button" class="pcard" data-place="shop"><span class="pcard__img">${PLACE_ICON.shop()}</span><b>가게</b><span class="pcard__st">${shopSub}</span></button>
-      <button type="button" class="pcard" data-place="board"><span class="pcard__img">${PLACE_ICON.board()}</span><b>게시판</b><span class="pcard__st">소식</span></button>
-    </div>
+    <p class="town-hint">${esc(here.length ? meetLine({f:here[0], date:TODAY, ev:metToday(here[0])}) : walking.length ? `${walking.length > 1 ? `${walking[0].room.name} 외 ${walking.length - 1}명이` : josa(walking[0].room.name, '이가')} 공원에 나와 있어요` : shopSub || '건물을 눌러 들어가 봐요')}</p>
+    ${meets.length ? `<p class="sec">오늘</p>${meets.map(x => `<p class="life">${esc(state.name)} · ${esc(x.f.room.name)} — ${x.ev.feed}</p>`).join('')}` : ''}
     <p class="sec">친구 집</p>
     ${state.friends.length ? state.friends.map(f => `<button type="button" class="friend-row" data-friend="${f.room.seed}">
         <span class="friend-row__av thumb">${avatar(f.room.look, {crop:'face'})}</span>
-        <span class="friend-row__t"><b>${esc(f.room.name)}</b><span class="sub">${NOW_TEXT[friendNow(f)]}</span></span><span aria-hidden="true">›</span></button>`).join('')
+        <span class="friend-row__t"><b>${esc(f.room.name)}</b><span class="sub">${metToday(f) ? '오늘 같이 놀았어요' : NOW_TEXT[friendNow(f)]}</span></span><span aria-hidden="true">›</span></button>`).join('')
       : '<p class="sub">친구에게 내 방 코드를 보내 보세요</p>'}
     <div class="chips"><button type="button" class="chip" id="myCodeBtn">내 방 코드 보내기</button><button type="button" class="chip" id="codeInBtn">받은 코드 넣기</button></div>`;
 }
-$('townBtn').onclick = () => { drawTown(); $('townPage').showModal(); };
-$('townBody').onclick = e => {
-  const place = e.target.closest('[data-place]')?.dataset.place;
+function goPlace(place){
   if (place === 'park') openPark();
   if (place === 'shop'){ drawShop(); $('shopSheet').showModal(); }
   if (place === 'board'){ drawBoard(); $('boardSheet').showModal(); }
+}
+$('townBtn').onclick = () => { drawTown(); $('townPage').showModal(); };
+$('townArt').onclick = e => { const g = e.target.closest('[data-place]'); if (g) goPlace(g.dataset.place); };
+$('townArt').onkeydown = e => { const g = e.target.closest('[data-place]'); if (g && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); goPlace(g.dataset.place); } };
+$('townBody').onclick = e => {
   const fr = e.target.closest('[data-friend]'); if (fr) openFriend(+fr.dataset.friend);
-  if (e.target.closest('#myCodeBtn')) openCode('내 방 코드', toCode('room', roomData(state, myKinds())), '친구가 이 링크를 열거나 코드를 넣으면 내 방에 놀러 와요. 방을 바꾸면 새로 보내 주세요');
+  if (e.target.closest('#myCodeBtn')) openCode('내 방 코드', toCode('room', roomData(state, myKinds())), '친구가 이 링크를 열거나 코드를 넣으면 내 방에 놀러 와요. 서로 코드를 넣으면 캐릭터끼리 마을에서 만나요');
   if (e.target.closest('#codeInBtn')){ $('codeInBox').value = ''; $('codeIn').returnValue = ''; $('codeIn').showModal(); }
 };
 
-// ── 공원: 계절이 바뀌고, 산책 나온 친구를 만난다 ──
+// ── 공원: 계절이 바뀌고, 오늘 만난 친구와 같이 있다 ──
 const PARK_ACTS = Object.keys(PARK_SPOTS);
-const FRIEND_SPOTS = [{x:80, y:93}, {x:16, y:95}];
+const WALKER_SPOTS = [{x:84, y:94}, {x:14, y:96}];
 function drawPark(){
-  const s = season(), time = timeOf(hourNow()), R = PARK[register()];
-  const act = PARK_ACTS[hash(`${state.seed}|park|${tick}`) % PARK_ACTS.length], spot = PARK_SPOTS[act];
-  const friends = state.friends.filter(f => friendNow(f) === 'walk').slice(0, FRIEND_SPOTS.length);
-  const line = friends.length && talk % 2 ? fill(R.friend, {n:friends[0].room.name}) : fill(R[act][talk % R[act].length], {s:s.label});
-  $('parkScene').innerHTML = `<div class="scene__base">
-      <div class="plane plane--sky" style="background:${SKY[time]}"></div><div class="plane plane--grass" style="background:${s.grass}">${parkGround(seasonOf(TODAY))}</div>
-      ${time === 'night' ? '' : SKY_CLOUDS}<span class="fx fx--tree">${TREE(s)}</span><span class="fx fx--tree2">${TREE(s)}</span><span class="fx fx--pond">${POND}</span><span class="fx fx--bench">${BENCH}</span>
-    </div>
-    ${friends.map((f, i) => `<div class="actor actor--static" style="--x:${FRIEND_SPOTS[i].x};--y:${FRIEND_SPOTS[i].y}"><div class="char">${avatar(f.room.look, {shadow:false})}</div></div>`).join('')}
-    <div class="actor actor--static" style="--x:${spot.x};--y:${spot.y}"><button type="button" class="char" id="parkChar" aria-label="${esc(state.name)} 쓰다듬기">${avatar(state.look, {shadow:false})}</button></div>
-    <p class="bubble bubble--static" style="--x:${spot.x};--y:${spot.y}">${esc(line)}</p>
+  const key = seasonOf(TODAY), time = timeOf(hourNow()), R = PARK[register()];
+  const date = state.friends.find(f => metToday(f)?.place === 'park');
+  const ev = date && metToday(date);
+  const act = PARK_ACTS[hash(`${state.seed}|park|${tick}`) % PARK_ACTS.length];
+  const mine = ev ? ev.pair[0] : PARK_SPOTS[act];
+  const walkers = state.friends.filter(f => f !== date && friendNow(f) === 'walk').slice(0, WALKER_SPOTS.length);
+  const line = ev ? meetLine({f:date, date:TODAY, ev})
+    : walkers.length && talk % 2 ? fill(R.friend, {n:walkers[0].room.name}) : fill(R[act][talk % R[act].length], {s:SEASONS[key].label});
+  const actor = (look, at, id = '') => `<div class="actor actor--static" style="--x:${at.x};--y:${at.y}">${id
+    ? `<button type="button" class="char" id="${id}" aria-label="${esc(state.name)} 쓰다듬기">` : '<div class="char">'}${avatar(look, {shadow:false})}${id ? '</button>' : '</div>'}</div>`;
+  $('parkScene').innerHTML = `<div class="scene__base">${parkSvg(key, time)}</div>
+    ${walkers.map((f, i) => actor(f.room.look, WALKER_SPOTS[i])).join('')}
+    ${ev ? actor(date.room.look, ev.pair[1]) : ''}
+    ${actor(state.look, mine, 'parkChar')}
+    <p class="bubble bubble--static" style="--x:${mine.x};--y:${mine.y}">${esc(line)}</p>
     <div class="night" data-time="${time}"></div>`;
-  $('parkSub').textContent = friends.length ? `${friends.map(f => f.room.name).join(', ')}도 산책 나와 있어요` : `${s.label} 공원이에요`;
+  const names = [...(date ? [date] : []), ...walkers].map(f => f.room.name);
+  $('parkSub').textContent = names.length ? `${names.join(', ')}도 공원에 나와 있어요` : `${SEASONS[key].label} 공원이에요`;
 }
 function openPark(){ drawPark(); if (!$('parkPage').open) $('parkPage').showModal(); }
 $('parkScene').onclick = e => { if (e.target.closest('#parkChar')){ talk++; drawPark(); } };
@@ -117,14 +101,16 @@ $('shopBody').onclick = e => {
   setTimeout(() => { say(SHOP_LINE[register()]); render(); }, 4000);   // 새 소품 알림 다음에
 };
 
-// ── 게시판: 오늘의 소식 + 받은 인사 ──
+// ── 게시판: 캐릭터들 소식(만남) + 받은 인사 + 오늘의 소식 ──
 function drawBoard(){
   const news = [...NEWS[seasonOf(TODAY)], ...NEWS.all];
+  const meets = recentMeets(7).map(x => ({date:x.date, who:`${esc(state.name)} · ${esc(x.f.room.name)}`, text:x.ev.feed}));
+  const mail = state.mail.map(m => ({date:m.date, who:esc(m.from), text:GREETS[m.greet] + (m.item ? ` · 선물 ${esc(itemOf(m.item).name)} ${itemOf(m.item).p.name}` : '')}));
+  const feed = [...meets, ...mail].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 30);
   $('boardBody').innerHTML = `<p class="life" style="margin-top:0">${news[hash(TODAY) % news.length]}</p>
-    <p class="sec">받은 인사</p>
-    ${state.mail.length ? [...state.mail].reverse().slice(0, 30).map(m => `<div class="row"><div class="row__h"><span>${esc(m.from)}</span><span class="num">${fmtDay(m.date)}</span></div>
-      <p class="sub"><b>${GREETS[m.greet]}</b>${m.item ? ` · 선물 ${esc(itemOf(m.item).name)} ${itemOf(m.item).p.name}` : ''}</p></div>`).join('')
-      : '<p class="sub">친구에게 내 방 코드를 보내 보세요</p>'}`;
+    <p class="sec">마을 소식</p>
+    ${feed.length ? feed.map(x => `<div class="row"><div class="row__h"><span>${x.who}</span><span class="num">${x.date === TODAY ? '오늘' : fmtDay(x.date)}</span></div><p class="sub"><b>${x.text}</b></p></div>`).join('')
+      : '<p class="sub">친구와 서로 방 코드를 넣으면 캐릭터끼리 만나요</p>'}`;
 }
 
 // ── 친구 방 ──
@@ -134,8 +120,10 @@ function drawFriend(){
   const f = state.friends.find(x => x.room.seed === friendSel); if (!f) return;
   const r = f.room, act = friendNow(f), info = ACTIVITIES[act], spot = info.spot ? SPOTS[info.spot === 'wander' && tick % 2 ? 'wander2' : info.spot] : null;
   const FL = LINES[r.personality], mine = talk % 2 === 1;
+  const last = recentMeets(3).find(x => x.f === f);   // 친구 입장에서: 「(내 이름)이랑 ~했어」
   const line = !spot ? `${josa(r.name, '은는')} 공원에 산책 갔어요`
-    : mine ? pick(VISIT_LINE[register()]) : (talk % 4 === 0 ? pick(FL.hello[timeOf(hourNow())]) : pick(FL.doing[act]));
+    : mine ? pick(VISIT_LINE[register()]) : talk % 4 === 0 ? pick(FL.hello[timeOf(hourNow())])
+    : last && talk % 4 === 2 ? fill((last.date === TODAY ? last.ev.now : last.ev.past)[PERSONALITIES[r.personality].register], {r:withRang(state.name)}) : pick(FL.doing[act]);
   const guest = spot && spot.x < 55 && spot.y > 80 ? GUEST_RIGHT : GUEST;   // 친구가 앞쪽 가운데면 비켜 선다
   const at = mine || !spot ? guest : spot;
   $('friendTitle').textContent = `${r.name}네 방`;

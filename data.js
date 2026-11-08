@@ -443,3 +443,20 @@ const NEWS = {
   winter:['공원에 눈사람이 생겼대요','가게 창문에 성에가 꼈어요','해가 일찍 져요. 따뜻하게 입어요'],
   all:['게시판에 고양이 그림이 붙었어요','누가 공원 벤치를 새로 칠했대요','가게 주인이 휴가에서 돌아왔대요','친구에게 방 코드를 보내 보세요'],
 };
+
+// ── 캐릭터끼리 만남 (A: 마을의 핵심) ──
+// {r} = 상대 이름 + 이랑/랑. pair = 공원에서 둘이 서는 자리 (%, 장면 기준). place 가 town 이면 거리에서 보임
+const MEET_EVENTS = [
+  {id:'bench',  place:'park', pair:[{x:62, y:76}, {x:80, y:76}],
+    past:{casual:'{r} 벤치에 같이 앉아 있었어', polite:'{r} 벤치에 같이 앉아 있었어요'}, now:{casual:'{r} 벤치에 앉아 있어!', polite:'{r} 벤치에 앉아 있어요'}, feed:'공원 벤치에 같이 앉아 있었어요'},
+  {id:'treasure', place:'park', pair:[{x:22, y:78}, {x:38, y:82}],
+    past:{casual:'{r} 나무 밑에서 보물찾기 했어', polite:'{r} 나무 밑에서 보물찾기 했어요'}, now:{casual:'{r} 보물찾기 중이야!', polite:'{r} 보물찾기 하고 있어요'}, feed:'나무 밑에서 보물찾기를 했어요'},
+  {id:'clouds', place:'park', pair:[{x:30, y:92}, {x:48, y:94}],
+    past:{casual:'{r} 구름 모양 맞히기 했어', polite:'{r} 구름 모양 맞히기를 했어요'}, now:{casual:'{r} 구름 모양 맞히는 중!', polite:'{r} 구름 모양을 맞히고 있어요'}, feed:'구름 모양 맞히기를 했어요'},
+  {id:'pond',   place:'park', pair:[{x:38, y:80}, {x:53, y:83}],
+    past:{casual:'{r} 연못 구경했어', polite:'{r} 연못을 구경했어요'}, now:{casual:'{r} 연못 보고 있어!', polite:'{r} 연못을 보고 있어요'}, feed:'연못 구경을 했어요'},
+  {id:'shop',   place:'town',
+    past:{casual:'{r} 가게에서 같은 걸 구경했어', polite:'{r} 가게에서 같은 물건을 구경했어요'}, now:{casual:'{r} 가게 앞에서 만났어!', polite:'{r} 가게 앞에서 만났어요'}, feed:'가게에서 같은 물건을 구경했어요'},
+  {id:'board',  place:'town',
+    past:{casual:'{r} 게시판에 그림 붙였어', polite:'{r} 게시판에 그림을 붙였어요'}, now:{casual:'{r} 게시판 앞에 있어!', polite:'{r} 게시판 앞에 있어요'}, feed:'게시판에 같이 그림을 붙였어요'},
+];

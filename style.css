@@ -273,26 +273,13 @@ dialog{background:var(--bg);border:2px solid var(--ink);border-bottom:0}
 .fx--desktop{right:calc(2cqw + 3*var(--u));bottom:calc(42cqh + 21*var(--u));width:calc(10*var(--u));z-index:3}
 
 /* 마을 */
-.scene--town{background:#A9DBFF}
-.town-svg{position:absolute;inset:0;width:100%;height:100%}
-.places{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:16px}
 .friend-row{display:flex;align-items:center;gap:12px;width:100%;padding:10px 0;border-bottom:var(--dash);text-align:left}
 .friend-row:last-of-type{border-bottom:0}
 .friend-row__av{flex:none;width:48px}
 .friend-row__t{flex:1;min-width:0;display:flex;flex-direction:column}
 .friend-row__t .sub{margin-top:2px}
 .friend-row + .chips,.sec + .sub + .chips{margin-top:16px}
-.scene--park,.scene--visit{margin:12px 20px 0}
-.scene--park{max-height:640px}   /* 너무 길면 하늘만 넓어짐 */
-.plane--sky{top:0;height:44%}
-.plane--grass{bottom:0;height:56%;border-top:2px solid var(--ink);overflow:hidden}
-.park-ground{position:absolute;inset:0;width:100%;height:100%}
-.fx--cloud1{left:8cqw;top:8cqh;width:calc(22*var(--u))}
-.fx--cloud2{right:12cqw;top:18cqh;width:calc(16*var(--u))}
-.fx--tree{left:1cqw;bottom:46cqh;width:calc(36*var(--u));z-index:1}
-.fx--tree2{right:2cqw;bottom:50cqh;width:calc(26*var(--u));z-index:1}
-.fx--pond{left:6cqw;bottom:6cqh;width:calc(46*var(--u));z-index:2}
-.fx--bench{right:5cqw;bottom:28cqh;width:calc(36*var(--u));z-index:2}
+.scene--visit{margin:12px 20px 0}
 .park__sub{flex:none;padding:12px 20px max(20px,env(safe-area-inset-bottom));text-align:center}
 .visit__bar{flex:none;display:flex;flex-direction:column;align-items:center;gap:12px;padding:0 20px max(20px,env(safe-area-inset-bottom))}
 .visit__bar .primary{margin:16px 0 0;width:100%}
@@ -304,3 +291,20 @@ dialog{background:var(--bg);border:2px solid var(--ink);border-bottom:0}
 /* 토스트는 위에: 아래 입력칸·버튼을 가리지 않게 */
 .toast{bottom:auto;top:max(64px,calc(env(safe-area-inset-top) + 56px))}
 @media (min-width:600px) and (hover:hover) and (pointer:fine){ .toast{bottom:auto;top:calc((100dvh - var(--ph))/2 + 64px)} }
+
+/* 마을·공원 그림: 비율 고정 (캐릭터 자리가 그림과 맞게) */
+.art-svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.art-label{font:700 11px 'IBM Plex Sans KR',sans-serif;fill:var(--ink);stroke:none;text-anchor:middle}
+.art-label--s{font-size:10px}
+.art-svg [data-place]{cursor:pointer;outline:none}
+.art-svg [data-place]:hover,.art-svg [data-place]:focus-visible{filter:drop-shadow(0 0 0 var(--ink)) brightness(1.05)}
+.art-svg [data-place]:focus-visible{filter:drop-shadow(2px 2px 0 var(--accent))}
+.scene--town{flex:none;height:auto;min-height:0;aspect-ratio:390/320}
+.scene--town .actor{width:15cqw}
+.town-hint{margin-top:12px;font-size:14px;font-weight:500;text-align:center}
+.scene--park{flex:none;height:auto;min-height:0;aspect-ratio:360/440;width:min(calc(100% - 40px),calc((100dvh - 190px)*.818));margin:12px auto 0}
+.scene--park .actor{width:21cqw}
+.scene--park .bubble{top:calc(var(--y)*1cqh - 26cqw)}
+@media (min-width:600px) and (hover:hover) and (pointer:fine){ .scene--park{width:min(calc(100% - 40px),calc((var(--ph) - 230px)*.818))} }
+#parkPage .scene--park{margin-top:auto}   /* 공원 그림을 화면 가운데쯤으로 */
+#parkPage .park__sub{margin-bottom:auto}

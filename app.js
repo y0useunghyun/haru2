@@ -198,6 +198,8 @@ function speech(act){
     if (state.visitDays <= 2 && !hasRecord(todayRec())) return {t:pick(L.shy)};
     return {t:pick(L.hello[timeOf(hourNow())])};
   }
+  const met = recentMeets(3)[0];   // 친구 캐릭터와 만난 이야기 (town.js)
+  if (talk % 7 === 6 && met) return {t:meetLine(met)};
   if (talk % 5 === 4 && timeOf(hourNow()) !== 'night') return {t:pick(L.lazy)};
   if (talk % 3 === 1){ const s = statusLine(); if (s) return s; }
   return {t:pick(L.doing[act])};
@@ -600,6 +602,7 @@ function memoriesOf(){
     ...(firstRec ? [[firstRec, '하루를 처음 나눈 날']] : []),
     ...state.interests.slice(1).filter(x => x.on <= TODAY).map(x => [x.on, `${INTERESTS[x.id].label}에 관심이 생긴 날`]),
     ...state.friends.map(f => [f.at, `${esc(f.room.name)}네 방에 처음 놀러 간 날`]),
+    ...state.friends.map(f => [firstMeet(f), `${esc(withRang(f.room.name))} 마을에서 처음 만난 날`]).filter(([d]) => d),
     ...[...firstGift].map(([from, d]) => [d, `${esc(from)}에게 인사를 받은 날`]),
   ].sort((a, b) => b[0].localeCompare(a[0])).map(([k, t]) => [fmt(k), t]);
 }

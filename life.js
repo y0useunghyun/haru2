@@ -203,3 +203,13 @@ function readCode(text){
     return data ? {type:m[1] === 'H' ? 'room' : 'gift', data, id:hash(m[0])} : null;
   } catch (err){ return null; }   // 잘못된 코드는 「못 읽음」으로만 처리 (호출한 쪽이 안내)
 }
+
+// ── 캐릭터끼리 만남: 두 고유값과 날짜로만 정한다 → 서로 코드를 가진 두 기기에서 같은 결과 ──
+const MEET_PERCENT = 40;   // 친구 한 명과 어떤 날 만날 확률
+function meetingOn(a, b, date){
+  if (date < a.born || date < b.born || a.seed === b.seed) return null;
+  const h = hash(`${Math.min(a.seed, b.seed)}|${Math.max(a.seed, b.seed)}|meet|${date}`);
+  return h % 100 < MEET_PERCENT ? MEET_EVENTS[Math.floor(h / 100) % MEET_EVENTS.length] : null;
+}
+const meetsNow = hour => ['noon', 'evening'].includes(timeOf(hour));   // 오늘 만남은 낮부터
+const withRang = n => { const c = n.charCodeAt(n.length - 1) - 0xAC00; return n + (c >= 0 && c % 28 ? '이랑' : '랑'); };
