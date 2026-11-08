@@ -107,8 +107,8 @@ function drawAvatar(p, L, {sleepy = false, cheek = .5, yawn = false} = {}){
 function avatar(L, {sleepy = false, cheek = .5, crop = ''} = {}){
   const look = cleanLook(L), yawn = L?.mouth === 4;
   const full = pxImage(`av|${JSON.stringify(look)}|${sleepy}|${cheek > .45}|${yawn}`, AV_W, AV_H, p => drawAvatar(p, look, {sleepy, cheek, yawn}));
-  if (!crop) return pxImg(full, 'av');
-  const [y0, h] = crop === 'face' ? [0, 18] : [12, 14];
+  if (!crop || crop === 'full') return pxImg(full, 'av');
+  const [y0, h] = {face:[0, 18], head:[0, 16], body:[12, 14]}[crop] ?? [0, 18];   // head = 베개에 누운 머리
   return `<span class="av av--crop" style="aspect-ratio:${AV_W}/${h}"><img class="px" src="${full}" alt="" style="top:${-y0 / h * 100}%;height:${AV_H / h * 100}%"></span>`;
 }
 

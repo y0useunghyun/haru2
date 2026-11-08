@@ -10,7 +10,7 @@ const PARTS = [
   {k:'hairColor', label:'머리색', colors:PX_HAIR.map(c => c[0])},
   {k:'eyes', label:'눈', n:4},
   {k:'skin', label:'피부', colors:PX_SKIN.map(c => c[0])},
-  {k:'outfit', label:'옷', n:3, crop:'body'},
+  {k:'outfit', label:'옷', n:3, crop:'full'},
   {k:'shirt', label:'옷 색', colors:PX_SHIRT.map(c => c[0])},
 ];
 const DEFAULT_LOOK = {hair:1, hairColor:1, eyes:1, skin:1, outfit:0, shirt:0};

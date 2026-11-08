@@ -164,7 +164,7 @@ function sceneBase({bare = false, kinds = myKinds()} = {}){
 
 // ── 캐릭터 생활 ──
 const SPOTS = {   // 발 위치 (scene 기준 %), by = 말풍선 높이 보정
-  window:{x:50, y:62}, wander:{x:34, y:80}, wander2:{x:62, y:76}, center:{x:50, y:89}, desk:{x:71, y:65}, plant:{x:25, y:92}, bed:{x:27, y:47, lying:true},
+  window:{x:50, y:62}, wander:{x:34, y:80}, wander2:{x:62, y:76}, center:{x:50, y:89}, desk:{x:71, y:65}, plant:{x:25, y:92}, bed:{x:15, y:46, lying:true},   // 누우면 머리만 베개 위, 몸은 이불 속
 };
 let tick = Math.floor(Date.now()/60000), talk = hash(Date.now()) % 100, greeted = false;
 let poke = null, reply = null, newProp = null, replyTimer, pokeTimer, propTimer;
@@ -221,9 +221,10 @@ function drawActor(act){
   const yawning = gesture === 'yawn';
   const sleepy = act === 'nap' || yawning || (t.energy != null && t.energy < 45);
   const look = yawning ? {...state.look, mouth:4} : state.look;
-  const charKey = JSON.stringify([look, sleepy, Math.round(t.nutri/10)]);
+  const lying = !!spot?.lying;
+  const charKey = JSON.stringify([look, sleepy, Math.round(t.nutri/10), lying]);
   if (charKey !== lastCharKey){
-    $('char').innerHTML = avatar(look, {sleepy, cheek:.15 + t.nutri/100*.6, shadow:false});
+    $('char').innerHTML = avatar(look, {sleepy, cheek:.15 + t.nutri/100*.6, crop:lying ? 'head' : ''});
     lastCharKey = charKey;
   }
   $('char').style.setProperty('--breath', (4.5 - (t.energy ?? 50)/100*2.2).toFixed(1) + 's');

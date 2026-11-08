@@ -192,13 +192,11 @@ dialog{background:var(--bg);border:2px solid var(--ink);border-bottom:0}
 .char--shade .av{filter:brightness(0);opacity:.75}
 .held{position:absolute;left:58%;top:63%;width:30%;z-index:7;pointer-events:none}
 .held svg{display:block;width:100%;height:auto}
-.is-lying .char{transform:rotate(-90deg) scale(.8)}
 .is-lying .held{display:none}
 .note{position:absolute;left:44cqw;top:78cqh;width:calc(14*var(--u));z-index:6}
 .note svg{display:block;width:100%;height:auto}
 
 .bubble{position:absolute;left:clamp(30cqw,calc(var(--x)*1cqw),70cqw);top:calc(var(--y)*1cqh - 41*var(--u));z-index:30;width:max-content;max-width:58cqw;padding:8px 14px;border:2px dashed var(--ink);border-radius:20px;background:#fff;color:var(--ink);font-size:14px;font-weight:500;line-height:1.35;text-align:center;transform:translate(-50%,-100%);transition:left 1.6s cubic-bezier(.4,0,.3,1),top 1.6s cubic-bezier(.4,0,.3,1)}
-.is-lying ~ .bubble{top:calc(var(--y)*1cqh - 28*var(--u))}
 .bubble.is-link{border-style:solid;box-shadow:2px 2px 0 var(--ink)}
 .bubble--static{margin:0;transition:none}
 .bubble.hop{animation:bubbleHop .6s cubic-bezier(.3,.7,.4,1)}
@@ -315,8 +313,7 @@ dialog{background:var(--bg);border:2px solid var(--ink);border-bottom:0}
 .scene{flex:none;height:auto;min-height:0;aspect-ratio:100/122;width:min(100%,calc((100dvh - 250px)*.82));margin:0 auto;background:#FFF3D6}
 .actor{width:20cqw}
 .bubble{top:calc(var(--y)*1cqh - 27cqw)}
-.is-lying ~ .bubble{top:calc(var(--y)*1cqh - 16cqw)}
-.is-lying .char{transform:rotate(-90deg)}
+.is-lying ~ .bubble{top:calc(var(--y)*1cqh - 18cqw)}
 .held{left:62%;top:60%;width:35%}
 .note{width:9cqw}
 .char .av{animation:pxbob 2.4s steps(1) infinite}
@@ -342,3 +339,15 @@ dialog{background:var(--bg);border:2px solid var(--ink);border-bottom:0}
 #parkPage .scene--park{margin-top:auto}
 @media (min-width:600px) and (hover:hover) and (pointer:fine){ .scene--park{width:min(calc(100% - 40px),calc((var(--ph) - 230px)*.82))} }
 @media (min-width:600px) and (hover:hover) and (pointer:fine){ .app{background:var(--bg)} }
+
+/* 그림 속 글자 = 도트 글꼴 (갈무리11). 말풍선은 도트식 상자 + 꼬리 */
+.bubble{font-family:'Galmuri11','IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:400;line-height:1.55;letter-spacing:0;padding:6px 10px;border:2px solid #3B2A20;border-radius:3px;box-shadow:2px 2px 0 rgba(59,42,32,.3);color:#3B2A20}
+.bubble::after{content:'';position:absolute;left:50%;bottom:-6px;width:8px;height:8px;background:inherit;border-right:2px solid #3B2A20;border-bottom:2px solid #3B2A20;transform:translateX(-50%) rotate(45deg)}
+.bubble.is-link{border-style:solid;background:#FFF3C4;box-shadow:2px 2px 0 #3B2A20}
+.sign{font-family:'Galmuri11','IBM Plex Sans KR',sans-serif;font-weight:400;font-size:11px}
+/* 발밑 그림자: 바닥에 붙어 보이게 */
+.actor::before{content:'';position:absolute;left:24%;right:24%;bottom:3%;height:5%;background:rgba(59,42,32,.22);border-radius:50%;z-index:-1}
+.is-lying::before{display:none}
+.is-lying{transform:translate(calc(var(--x)*1cqw - 50%),calc(var(--y)*1cqh - 100%))}   /* 누운 머리: 아래 끝이 자리 */
+.is-lying .char{transform:none}
+.is-lying .av{animation:none}

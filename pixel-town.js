@@ -27,8 +27,13 @@ function pxTree(p, cx, base, k, season){
     [[0, -18, -9, -30], [0, -20, 8, -32], [0, -14, 10, -22], [0, -12, -10, -20]].forEach(([a, b, c, d]) => { p.line(cx + a * k, base + b * k, cx + c * k, base + d * k, OUT); p.dot(Math.round(cx + c * k), Math.round(base + d * k) - 1, '#fff'); p.dot(Math.round(cx + c * k) + 1, Math.round(base + d * k) - 1, '#fff'); });
     return;
   }
-  const crown = any(ell(cx, base - 30 * k, 11 * k, 10 * k), ell(cx - 9 * k, base - 22 * k, 8 * k, 7 * k), ell(cx + 9 * k, base - 22 * k, 8 * k, 7 * k), ell(cx, base - 19 * k, 9 * k, 6 * k), ell(cx - 4 * k, base - 38 * k, 7 * k, 6 * k));
-  p.shape(crown, (x, y) => ((x * 3 + y * 5) % 13 === 0 ? s.leafL : y > base - 22 * k || x > cx + 6 * k ? s.leafD : (x < cx - 3 * k && y < base - 30 * k) ? shade(s.leaf, .12) : s.leaf));
+  // 둥근 덩어리 여러 개 + 왼쪽 위에서 빛 (밝은 쪽·어두운 쪽·잎 점)
+  const C = [[0, -30, 12], [-10, -27, 9], [10, -27, 9], [-13, -18, 8], [13, -18, 8], [0, -17, 10], [-5, -39, 8], [6, -38, 8]];
+  const crown = any(...C.map(([a, b, r]) => ell(cx + a * k, base + b * k, r * k)));
+  const mid = base - 28 * k;
+  p.shape(crown, (x, y) => { const d = (x - cx) * .8 + (y - mid);
+    if ((x * 7 + y * 3) % 17 === 0) return s.leafL;
+    return d > 8 * k ? s.leafD : d < -9 * k ? shade(s.leaf, .14) : s.leaf; });
 }
 // 잔디 디더링 + 풀포기
 function pxGrass(p, y0, w, h, s, seed){
@@ -48,6 +53,13 @@ function pxLamp(p, x, top, bottom, lit){
   p.shape(box(x, top + 4, x + 2, bottom), '#5A4A40');
   p.shape((a, b) => b >= top && b < top + 5 && a >= x - 2 + (b === top ? 1 : 0) && a < x + 4 - (b === top ? 1 : 0), lit ? '#FFE27A' : '#FFD23F');
 }
+
+// 작은 생명: 자는 고양이(10×6), 새(4×3)
+function pxCat(p, x, y, fur = '#E8A86A'){
+  p.shape(any(ell(x + 4, y + 4, 4, 2.4), ell(x + 8, y + 3, 2.2, 2), box(x + 7, y, x + 8, y + 2), box(x + 9, y, x + 10, y + 2)), (a, b) => ((a + b) % 3 === 0 ? shade(fur, -.15) : fur));
+  p.dot(x + 8, y + 3, OUT); p.line(x, y + 5, x - 2, y + 3, OUT);
+}
+const pxBird = (p, x, y, c = '#8EC9FF') => { p.shape(any(ell(x + 2, y + 2, 2, 1.5), box(x + 3, y, x + 4, y + 2)), c); p.dot(x + 4, y + 1, '#F2B84B'); };
 
 // ── 마을 거리 ──
 const TOWN_PX_W = 100, TOWN_PX_H = 82;
@@ -92,6 +104,8 @@ function townImage(season, time){
     p.rect(0, 73, W, 9, '#CFC4B6'); p.rect(0, 73, W, 1, OUT);
     for (let x = 2; x < W; x += 8) p.rect(x, 77, 4, 1, '#FFFFFF');
     pxLitter(p, 0, 63, W, 9, season, 16, 3);
+    pxCat(p, 6, 63, season === 'winter' ? '#B9B2AA' : '#E8A86A');
+    if (time !== 'night'){ pxBird(p, 77, 33); pxBird(p, 86, 31, '#FF9EB8'); }
   });
 }
 const townScene = (season, time) => pxImg(townImage(season, time), 'scene-img')
@@ -129,6 +143,7 @@ function parkImage(season, time){
     // 계절 장식
     pxLitter(p, 2, 56, 96, 62, season, 26, 7);
     if (winter){ p.shape(ell(10, 112, 5), '#FFFFFF'); p.shape(ell(10, 104, 3.6), '#FFFFFF'); p.dot(9, 103, OUT); p.dot(11, 103, OUT); p.dot(12, 104, '#E8835F'); }
+    if (time !== 'night') pxBird(p, 87, 50, '#FF9EB8');
     if (season === 'autumn') p.shape(any(ell(7, 100, 2.4, 1.6), box(6, 100, 9, 103)), (x, y) => (y < 101 ? '#D9583F' : '#F2EBDD'));
   });
 }

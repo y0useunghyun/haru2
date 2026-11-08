@@ -55,7 +55,7 @@ const ITEM_ART = {
     (p, x, y) => { p.shape(rbox(x, y, x + 10, y + 10), '#FFD23F'); p.line(x + 5, y + 5, x + 5, y + 2, OUT); p.line(x + 5, y + 5, x + 7, y + 5, OUT); },
     (p, x, y) => { p.shape((a, b) => b >= y + Math.abs(a + .5 - x - 5) && b < y + 11 && a >= x && a < x + 10, WOOD); p.shape(ell(x + 5, y + 7, 2.6), '#fff'); p.dot(x + 5, y + 6, OUT); p.dot(x + 5, y + 3, '#FF9EB8'); },
   ]},
-  garland:{at:[6, 1], w:88, h:11, kinds:[0, 1, 2].map(k => (p, x, y) => {
+  garland:{at:[6, 1], w:88, h:11, thumbW:46, kinds:[0, 1, 2].map(k => (p, x, y) => {
     const sag = t => Math.round(y + 1 + 5 * Math.sin(t * Math.PI));
     for (let i = 0; i <= 87; i++) p.dot(x + i, sag(i / 87), OUT);
     const cols = ['#FF9EB8', '#FFD23F', '#86D9B9', '#8EC9FF'];
@@ -131,5 +131,5 @@ function roomImage(kinds, time, weather, bare = false){
 function kindArt(prop, k){
   if (prop.plane) return pxImg(pxImage(`kind|${prop.id}|${k}`, 16, 12, p => { for (let y = 0; y < 12; y++) for (let x = 0; x < 16; x++) p.dot(x, y, PLANE_PAT[prop.id][k](x, y)); p.shape(box(0, 0, 16, 12), c => null); }), 'kind');
   const a = ITEM_ART[prop.id];
-  return pxImg(pxImage(`kind|${prop.id}|${k}`, a.w + 2, a.h + 2, p => a.kinds[k](p, 1, 1, {time:'noon', weather:'clear'})), 'kind');
+  return pxImg(pxImage(`kind|${prop.id}|${k}`, (a.thumbW ?? a.w) + 2, a.h + 2, p => a.kinds[k](p, 1, 1, {time:'noon', weather:'clear'})), 'kind');   // 가로로 긴 장식은 반만 보여 크게
 }
