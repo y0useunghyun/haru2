@@ -123,7 +123,7 @@ function drawFriend(){
   const line = !spot ? `${josa(r.name, '은는')} 공원에 산책 갔어요`
     : mine ? pick(VISIT_LINE[register()]) : talk % 4 === 0 ? pick(FL.hello[timeOf(hourNow())])
     : last && talk % 4 === 2 ? fill((last.date === TODAY ? last.ev.now : last.ev.past)[PERSONALITIES[r.personality].register], {r:withRang(state.name)}) : pick(FL.doing[act]);
-  const guest = spot && spot.x < 55 && spot.y > 80 ? GUEST_RIGHT : GUEST;   // 친구가 앞쪽 가운데면 비켜 선다
+  const guest = !spot || (spot.x < 55 && spot.y > 80) ? GUEST_RIGHT : GUEST;   // 친구가 앞쪽 가운데거나 쪽지가 있으면 비켜 선다
   const at = mine || !spot ? guest : spot;
   $('friendTitle').textContent = `${r.name}네 방`;
   $('friendScene').innerHTML = `<div class="scene__base">${sceneBase({kinds:r.kinds})}</div>

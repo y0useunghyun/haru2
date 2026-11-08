@@ -669,7 +669,7 @@ function drawFirst(){
         <input class="field first__name" id="firstName" maxlength="12" placeholder="이름 (안 지어도 돼요)" aria-label="캐릭터 이름" value="${esc(firstDraft.name)}">
         <button type="button" class="primary" data-first="next">이렇게 할게요</button>`),
     () => firstFrame(full + firstActor(state.look, ''), `<p class="first__h" tabindex="-1" autofocus>방에 하나 둘까요?</p>
-        <div class="props-grid">${PROPS[0].kinds.map(([n, svg], i) => `<button type="button" class="pcard" data-kind="${i}" data-plant="${i}" aria-pressed="${i === firstDraft.plant}"><span class="pcard__img">${svg}</span><b>${n}</b></button>`).join('')}</div>
+        <div class="props-grid">${PROPS[0].kinds.map((n, i) => `<button type="button" class="pcard" data-kind="${i}" data-plant="${i}" aria-pressed="${i === firstDraft.plant}"><span class="pcard__img">${kindArt(PROPS[0], i)}</span><b>${n}</b></button>`).join('')}</div>
         <button type="button" class="primary" data-first="next">여기 둘게요</button>`),
     () => firstFrame(full + firstActor(state.look, reply ?? (PERSONALITIES[firstDraft.personality].register === 'casual' ? '앞으로 여기서 같이 지내는 거야?' : '앞으로 여기서 같이 지내는 거예요?')), `<p class="first__h" tabindex="-1" autofocus>오늘 어땠어요?</p>
         <div class="moods">${MOODS.map(([k, label]) => `<button type="button" class="chip mood" data-fmood="${k}" aria-pressed="${todayRec().mood === k}">${label}</button>`).join('')}</div>
