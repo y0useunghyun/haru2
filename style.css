@@ -351,3 +351,8 @@ dialog{background:var(--bg);border:2px solid var(--ink);border-bottom:0}
 .is-lying{transform:translate(calc(var(--x)*1cqw - 50%),calc(var(--y)*1cqh - 100%))}   /* 누운 머리: 아래 끝이 자리 */
 .is-lying .char{transform:none}
 .is-lying .av{animation:none}
+
+/* 홈: 방은 위, 기록 칸은 화면 아래 (엄지 닿는 곳) */
+#scene ~ .panel{margin-top:auto}
+/* 나가 있을 땐 말풍선이 쪽지 위에 */
+.actor[hidden] ~ .bubble{top:calc(78cqh - 3cqw)}

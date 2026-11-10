@@ -187,6 +187,7 @@ function speech(act){
   if (poke) return {t:poke};
   if (newProp) return {t:newProp};
   if (reply) return {t:reply};
+  if (!ACTIVITIES[act].spot) return {t:pick(L.doing[act]), go:'park'};   // 나가 있을 땐 인사 대신 쪽지 글
   if (!greeted){
     if (state.visitDays <= 2 && !hasRecord(todayRec())) return {t:pick(L.shy)};
     return {t:pick(L.hello[timeOf(hourNow())])};
@@ -276,7 +277,7 @@ $('char').onclick = () => {
   talk++; poke = pick(lines().poke); render(); hop();
   clearTimeout(pokeTimer); pokeTimer = setTimeout(() => { poke = null; talk++; render(); }, 2000);
 };
-$('bubble').onclick = () => { if (currentGo === 'meal') openMeal(-1); else { talk++; render(); } };
+$('bubble').onclick = () => { if (currentGo === 'meal') openMeal(-1); else if (currentGo === 'park') openPark(); else { talk++; render(); } };
 $('note').onclick = () => openPark();   // 쪽지 = 공원에 나가 있어요 → 공원에서 만남 (town.js)
 $('moods').onclick = e => {
   const b = e.target.closest('[data-mood]'); if (!b) return;
