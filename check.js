@@ -1,7 +1,7 @@
 // 계산 확인: node check.js  (브라우저처럼 data.js → life.js 를 같은 공간에 불러온 뒤 검사)
 const vm = require('vm'), fs = require('fs'), assert = require('assert');
 const ctx = vm.createContext({btoa, atob, TextEncoder, TextDecoder, console});
-for (const f of ['data.js', 'life.js']) vm.runInContext(fs.readFileSync(`${__dirname}/${f}`, 'utf8'), ctx, {filename:f});
+for (const f of ['data.js', 'talk.js', 'life.js']) vm.runInContext(fs.readFileSync(`${__dirname}/${f}`, 'utf8'), ctx, {filename:f});
 const run = code => vm.runInContext(code, ctx);
 const L = run('({activityFor, interestsOn, growInterests, together, awayLog, daysBetween, addDays, ownedItems, shopItem, ITEM_ORDER, ALL_ITEMS, parseRecord, isEmptyParse, toCode, readCode, roomData, seasonOf, cleanLook, DEFAULT_LOOK, meetingOn, withRang})');
 const eq = (a, b) => assert.deepStrictEqual(JSON.parse(JSON.stringify(a)), b);
@@ -90,4 +90,19 @@ const met = days10.filter(d => L.meetingOn(A, B, d)).length;
 assert.ok(met >= 1 && met <= 8, `만난 날 ${met}`);
 assert.strictEqual(L.withRang('콩이'), '콩이랑');
 assert.strictEqual(L.withRang('하늘'), '하늘이랑');
+// 대사: 원래 대사는 남고 덧붙은 것이 뒤에. 모든 행동·시간대·날씨·계절·단계에 빈 칸이 없음
+const T = run('({LINES, WORLD, DEEP, deepStage, ACTIVITIES})');
+assert.strictEqual(T.LINES.calm.doing.plant[0], '잎이 조금 자란 것 같아요');
+assert.strictEqual(T.LINES.calm.doing.plant.length, 5);
+assert.strictEqual(T.LINES.calm.unknown, '이건 처음 보는 음식이에요');
+for (const P of Object.values(T.LINES)){
+  for (const a of Object.keys(T.ACTIVITIES)) assert.ok(P.doing[a].length >= 3, a);
+  for (const t of ['morning','noon','evening','night']) assert.ok(P.hello[t].length >= 4, t);
+}
+for (const W of Object.values(T.WORLD)){
+  for (const w of ['clear','cloud','rain','snow']) assert.ok(W.weather[w].length, w);
+  for (const s of ['spring','summer','autumn','winter']) assert.ok(W.season[s].length, s);
+}
+eq([0, 6, 7, 20, 21, 59, 60, 400].map(T.deepStage), [0, 0, 1, 1, 2, 2, 3, 3]);
+for (const D of Object.values(T.DEEP)) assert.strictEqual(D.length, 4);
 console.log('check.js ok');

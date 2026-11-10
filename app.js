@@ -170,7 +170,7 @@ let tick = Math.floor(Date.now()/60000), talk = hash(Date.now()) % 100, greeted 
 let poke = null, reply = null, newProp = null, replyTimer, pokeTimer, propTimer;
 let override = null, overrideUntil = 0, gesture = null, gestureTimer;   // 잠깐 다른 일을 하게 할 때 (쪽지, 기록 대답)
 const doFor = (act, ms) => { override = act; overrideUntil = Date.now() + ms; };
-const pick = arr => arr[talk % arr.length];
+const pick = arr => arr[hash(talk + arr[0]) % arr.length];   // talk 나머지와 엇갈리게 (talk % 8 === 2 일 때 늘 같은 줄 X)
 const nowActivity = () => override ?? activityFor(state, TODAY, hourNow(), tick);
 
 function statusLine(){
@@ -181,6 +181,10 @@ function statusLine(){
   if (proteinUpOf(d.moves) && t.fill[0] < 1) return {t:pick(L.moved), go:'meal'};
   if (t.lack >= 0) return {t:pick(L.crave[t.lack]), go:'meal'};
   return {t:pick(L.full)};
+}
+function worldLines(){   // 날씨·계절. 밤에 맑음·흐림이면 계절
+  const W = WORLD[register()];
+  return timeOf(hourNow()) === 'night' && (weather === 'clear' || weather === 'cloud') ? W.season[seasonOf(TODAY)] : Math.floor(talk / 8) % 2 ? W.weather[weather] : W.season[seasonOf(TODAY)];
 }
 function speech(act){
   const L = lines();
@@ -194,6 +198,8 @@ function speech(act){
   }
   const met = recentMeets(3)[0];   // 친구 캐릭터와 만난 이야기 (town.js)
   if (talk % 7 === 6 && met) return {t:meetLine(met)};
+  if (talk % 8 === 2) return {t:pick(worldLines())};
+  if (talk % 9 === 5) return {t:pick(DEEP[register()][deepStage(daysBetween(state.born, TODAY))])};
   if (talk % 5 === 4 && timeOf(hourNow()) !== 'night') return {t:pick(L.lazy)};
   if (talk % 3 === 1){ const s = statusLine(); if (s) return s; }
   return {t:pick(L.doing[act])};
