@@ -65,7 +65,8 @@ async function takeShortCode(text){
   if (!cloudUser) await cloudStart().catch(err => console.warn('다시 연결 실패', err));   // 끊겨 있으면 한 번 더
   if (!sb || !cloudUser) return showToast('서버에 연결되지 않았어요. 인터넷을 확인하고 다시 넣어 주세요');
   try { await friendSyncRoom(); } catch (err){ console.warn('방 올리기 실패', err); }
-  const {data:uid, error} = await sb.rpc('add_friend_code', {code:text}).catch(err => ({error:err}));
+  let uid = null, error = null;   // supabase 요청은 .catch 가 없어서 try 로
+  try { ({data:uid, error} = await sb.rpc('add_friend_code', {code:text})); } catch (err){ error = err; }
   if (error || !uid){ console.warn('친구 코드 실패', error); return showToast('그런 친구 코드가 없어요. 6글자를 다시 확인해 주세요'); }
   if (uid === cloudUser.id) return showToast('내 친구 코드예요. 친구에게 보내 주세요');
   await refreshFriends();
