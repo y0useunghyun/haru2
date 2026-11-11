@@ -388,3 +388,13 @@ dialog{background:var(--bg);border:2px solid var(--ink);border-bottom:0}
 .actor--high .char{animation-duration:1.6s;--sw:9deg}
 @keyframes swing{0%,100%{transform:rotate(calc(-1 * var(--sw, 5deg)))}50%{transform:rotate(var(--sw, 5deg))}}
 @media (prefers-reduced-motion:reduce){.actor--swing .char{animation:none}}
+
+/* ── 타이틀 (title.js): 로고·그림은 위에 고정, 시작하기는 맨 아래 ── */
+.title{align-items:center;padding:max(40px,env(safe-area-inset-top)) 20px max(24px,env(safe-area-inset-bottom));background:#FFF6EA}
+.title__logo{margin:0;line-height:0}
+.title__logo-img{width:min(72vw,280px);margin:0 auto}
+.title__art{position:relative;container-type:size;overflow:hidden;flex:none;width:min(100%,calc((100dvh - 360px)*1.25));aspect-ratio:100/80;margin-top:20px;border:2px solid var(--ink);border-radius:24px;box-shadow:4px 4px 0 var(--ink);--u:min(1cqw,.72cqh)}
+.title__art .actor{width:20cqw}
+.title__sub{margin:18px 0 0;font-size:15px;color:var(--text-2);text-align:center}
+.edit .title__go{width:100%;margin:auto 0 0}   /* .edit .primary 의 좌우 여백·auto 폭을 덮음 */
+@media (min-width:600px) and (hover:hover) and (pointer:fine){ .title__art{width:min(100%,calc((var(--ph) - 400px)*1.25))} }

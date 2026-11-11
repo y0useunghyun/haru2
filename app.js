@@ -762,7 +762,7 @@ setInterval(checkDay, 60000);
 function start(){
   render();
   loadWeather();
-  if (!state.met){ drawFirst(); $('first').showModal(); }
+  if (!state.met) openTitle();   // 타이틀 → 시작하기 → 첫 시작 (title.js)
   else if (awayEntries.length) openBack();
   else homeReady();
 }

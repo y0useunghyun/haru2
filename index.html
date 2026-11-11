@@ -47,6 +47,13 @@ if (location.protocol === 'https:') (function(c,l,a,r,i,t,y){
 </main>
 <div class="toast" id="toast" role="status" hidden><span id="toastText"></span><button type="button" class="toast__undo" id="toastUndo" hidden>되돌리기</button></div>
 
+<dialog id="title" class="edit"><div class="edit__in title">
+  <h1 class="title__logo" id="titleLogo" aria-label="하루"></h1>
+  <div class="title__art" id="titleArt" aria-hidden="true"></div>
+  <p class="title__sub">작은 방에 사는 친구와 하루를 나눠요</p>
+  <button type="button" class="primary title__go" id="titleGo">시작하기</button>
+</div></dialog>
+
 <dialog id="first" class="edit"><div class="edit__in" id="firstBody"></div></dialog>
 
 <dialog id="back"><form class="sheet" method="dialog">
@@ -222,6 +229,7 @@ if (location.protocol === 'https:') (function(c,l,a,r,i,t,y){
 <script src="app.js"></script>
 <script src="chat.js"></script>
 <script src="pixel-town.js"></script>
+<script src="title.js"></script>
 <script src="town.js"></script>
 </body>
 </html>
