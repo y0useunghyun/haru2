@@ -82,7 +82,8 @@ function loadSaved(){
 }
 // undo 가 있으면 「되돌리기」 버튼을 같이 보여준다
 function showToast(text, undo = null){
-  const top = [...document.querySelectorAll('dialog[open]')].at(-1);   // 열린 창이 있으면 그 안에 (창은 맨 위 층이라 밖에 두면 가려짐)
+  const top = [...document.querySelectorAll('dialog[open]')].at(-1);
+  if (!top && !undo && typeof chatPush === 'function' && state.met) return chatPush(false, text, 'sys');   // 홈: 아래 대화창이 기본 시스템 → 안내 줄로 (chat.js)   // 열린 창이 있으면 그 안에 (창은 맨 위 층이라 밖에 두면 가려짐)
   (top ?? document.body).appendChild($('toast'));
   $('toastText').textContent = text; $('toast').hidden = false;
   $('toastUndo').hidden = !undo;

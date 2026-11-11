@@ -445,3 +445,4 @@ dialog{background:var(--bg);border:2px solid var(--ink);border-bottom:0}
 /* 안내(토스트): 아래쪽, 대화창 말풍선과 같은 도트 상자 (위에 뜨던 것 정리) */
 .toast{top:auto;bottom:max(96px,calc(env(safe-area-inset-bottom) + 88px));padding:10px 14px;border:2px solid #3B2A20;border-radius:4px;box-shadow:2px 2px 0 rgba(59,42,32,.35);font-size:14px;color:#3B2A20}
 dialog .toast{position:absolute;bottom:24px}   /* 열린 창 안에서는 그 창의 아래쪽 */
+.msg--sys{align-self:center;max-width:90%;padding:4px 10px;border:0;border-radius:10px;background:#FFF3D6;box-shadow:none;font-size:12px;color:var(--text-2);text-align:center}   /* 안내 줄 (토스트 대신) */

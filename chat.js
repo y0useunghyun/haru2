@@ -25,7 +25,7 @@ function chatAsk(){
   chatPush(false, q.t);
 }
 function drawChat(){
-  const log = $('chatLog'), html = chat.map(m => `<p class="msg ${m.me ? 'msg--me' : ''}">${esc(m.t)}${m.go === 'park' ? '<button type="button" class="msg__go" data-go="park">공원 가기 ›</button>' : ''}${m.go?.startsWith('play:') && typeof playButtons === 'function' ? playButtons(m) : ''}</p>${undo?.id === m.id ? '<button type="button" class="msg__undo" data-undo>되돌리기</button>' : ''}`).join('');
+  const log = $('chatLog'), html = chat.map(m => `<p class="msg ${m.me ? 'msg--me' : ''} ${m.go === 'sys' ? 'msg--sys' : ''}">${esc(m.t)}${m.go === 'park' ? '<button type="button" class="msg__go" data-go="park">공원 가기 ›</button>' : ''}${m.go?.startsWith('play:') && typeof playButtons === 'function' ? playButtons(m) : ''}</p>${undo?.id === m.id ? '<button type="button" class="msg__undo" data-undo>되돌리기</button>' : ''}`).join('');
   if (log.innerHTML !== html){ log.innerHTML = html; log.scrollTop = log.scrollHeight; }
   const still = openAsk && askNow()?.kind === openAsk;
   $('sayInput').placeholder = still ? HINT[openAsk] : `${state.name || '캐릭터'}에게 말해 주기…`;
