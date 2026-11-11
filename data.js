@@ -177,11 +177,6 @@ const AFTER_RECORD = {
 };
 
 // ── 한 줄 입력·마을·친구 ──────────────────
-// 한 줄 입력에서 아무것도 못 알아들었을 때
-const WHAT = {
-  casual:'음, 잘 모르겠어. 잠, 운동, 먹은 걸 말해 줄래?',
-  polite:'음, 잘 모르겠어요. 잠, 운동, 먹은 걸 알려 줄래요?',
-};
 const SEASONS = {
   spring:{label:'봄', grass:'#BFE6A8', leaf:'#FFB3C7', ground:'#F3E3C3'},
   summer:{label:'여름', grass:'#86D9B9', leaf:'#5FC79F', ground:'#F2D9A8'},

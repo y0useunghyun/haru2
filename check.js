@@ -134,4 +134,17 @@ for (const A_ of Object.values(run('AFTER_RECORD'))) for (const t of Object.valu
 const PK = run('({pickOn, PICKS, PICK_BY_ID})');
 assert.strictEqual(PK.pickOn(c, '2026-11-11'), PK.pickOn(c, '2026-11-11'));
 assert.ok(PK.PICKS.autumn.includes(PK.pickOn(c, '2026-11-11')) && PK.PICKS.winter.includes(PK.pickOn(c, '2026-12-25')));
+// 가상 대화에서 나온 것들 (2026-11-11)
+assert.strictEqual(P('최악이야').mood, 'hard'); assert.strictEqual(P('기뻐').mood, 'good');
+assert.strictEqual(P('12시에 자서 8시에 일어났어').sleep, 8); assert.strictEqual(P('11시에 자고 7시에 일어남').sleep, 8);
+assert.ok(ANS('아직', 'meal').skip); assert.ok(ANS('몰라', 'mood').skip);
+assert.strictEqual(ANS('응', 'sleep').sleep, 7); eq(ANS('응', 'move').moves, [{type:'운동', min:30}]); assert.strictEqual(ANS('응', 'meal').meals.length, 0);
+const TK = run('({MOVE_TALK, OUTDOOR, SKIP_TALK, CHITCHAT, CHAT_ELSE, MOVE_TYPES})');
+for (const reg of ['casual', 'polite']){
+  for (const type of Object.keys(TK.MOVE_TYPES)) assert.ok(TK.MOVE_TALK[reg][type] && !/\?\s*$/.test(TK.MOVE_TALK[reg][type]), type);
+  for (const k of ['mood', 'sleep', 'meal', 'move']) assert.ok(TK.SKIP_TALK[reg][k] && !/\?\s*$/.test(TK.SKIP_TALK[reg][k]), k);
+  for (const [, t] of TK.CHITCHAT) assert.ok(!/\?\s*$/.test(t[reg]), t[reg]);   // 잡담 대답 뒤에 질문을 다시 하므로
+}
+for (const t of Object.values(run('ATE_TALK')).flat()) assert.ok(t.includes('{n}') && !/\?\s*$/.test(t), t);
+assert.ok(!TK.OUTDOOR.includes('수영') && !TK.OUTDOOR.includes('근력'));
 console.log('check.js ok');

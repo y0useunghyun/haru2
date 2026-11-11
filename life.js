@@ -140,7 +140,7 @@ const hits = name => name.split(/\s+/).flatMap(w => {
 // ── 한 줄 입력 → 기록 ──
 // 「점심에 김밥하고 라면, 7시간 자고 30분 걸었어」 → 식사·잠·운동. 모르는 건 그냥 넘긴다
 const WHEN_WORDS = [[/아침/, '아침'], [/점심|브런치/, '점심'], [/저녁/, '저녁'], [/간식|야식|디저트/, '간식']];
-const MOOD_WORDS = [[/힘들|피곤|지쳤|지친|우울|별로|짜증|속상|안\s*좋/, 'hard'], [/좋았|좋아|행복|신났|최고|즐거|재밌|재미있/, 'good'], [/보통|그냥 그래|무난|그럭저럭/, 'soso']];
+const MOOD_WORDS = [[/힘들|피곤|지쳤|지친|우울|별로|짜증|속상|안\s*좋|최악|슬퍼|슬프|화나|화가|외로|불안|아파|아프/, 'hard'], [/좋았|좋아|행복|신났|신나|최고|즐거|재밌|재미있|기뻐|기쁘|설레|뿌듯/, 'good'], [/보통|그냥|그저 그래|무난|그럭저럭|쏘쏘/, 'soso']];
 const HOURS_RE = /(\d+(?:\.\d+)?)\s*시간(\s*반)?/;
 const FILLER = /^(오늘|그리고|좀|많이|조금|맛있게|든든하게|간단히|대충|했어|했다|함)$/;
 function mealName(s){
@@ -153,6 +153,9 @@ function mealName(s){
 function parseRecord(text, fallbackWhen = '간식'){
   let sleep = null, mood = null, rest = false, when = null;
   const moves = [], meals = [];   // 이 함수 안에서만 쌓는 목록
+  // 「12시에 자서 8시에 일어났어」 = 8시간. 「자고」 뒤에서 문장이 나뉘기 전에 전체에서 찾음
+  const span = String(text).match(/(\d+)\s*시[^\d]*?(?:자|잠)[^\d]*?(\d+)\s*시[^\d]*?(?:일어|깼|기상)/);
+  if (span) sleep = ((+span[2] - +span[1]) % 12 + 12) % 12 || 12;
   for (const raw of String(text).slice(0, 200).split(/[,.\n!?~]+|\s*그리고\s*|(?<=고)\s+/)){
     const s = raw.trim(); if (!s) continue;
     if (/아무것도\s*안/.test(s)){ rest = true; continue; }
@@ -161,7 +164,7 @@ function parseRecord(text, fallbackWhen = '간식'){
     const h = s.match(HOURS_RE), hours = h ? +h[1] + (h[2] ? .5 : 0) : null;
     // 「6시간」만 쓰면 잠 (캐릭터가 「몇 시간 잤어요?」 하고 묻기 때문)
     if ((/잤|자고|수면|잠(?!깐)/.test(s) && !/낮잠/.test(s)) || /^\d+\s*시간\s*반?\s*(정도|쯤)?$/.test(s)){
-      sleep = Math.min(14, hours ?? (/푹|꿀잠|늦잠|많이/.test(s) ? 9 : /못|조금|적게|설쳤|뒤척/.test(s) ? 5 : 7));
+      sleep = Math.min(14, hours ?? (span ? sleep : /푹|꿀잠|늦잠|많이/.test(s) ? 9 : /못|조금|적게|설쳤|뒤척/.test(s) ? 5 : 7));
       continue;
     }
     const move = MOVE_WORDS.find(([re]) => re.test(s));
@@ -184,14 +187,16 @@ function parseRecord(text, fallbackWhen = '간식'){
 // 캐릭터가 물어본 것(kind)에 대한 대답. 못 알아들으면 질문 종류로 받는다
 // 「6」→ 잠 6시간 / 식사 질문에 처음 보는 말 → 그 이름으로 식사 / 운동 질문에 「클라이밍」→ 운동 30분
 // 「아니」「안 먹었어」 같은 대답은 skip (그 질문은 오늘 다시 안 물음)
-const NO_ANSWER = /^(아니|아뇨|못|없어|글쎄|몰라)|안\s*(먹|했|움직|잤)|굶/;   // 「안 좋아」는 기분이라 넣지 않음
+const NO_ANSWER = /^(아니|아뇨|못|없어|글쎄|몰라|아직|나중|이따)|안\s*(먹|했|움직|잤)|굶/;   // 「안 좋아」는 기분이라 넣지 않음
 function parseAnswer(text, kind, when){
   const r = parseRecord(text, when), s = String(text).trim().slice(0, 40);
   if (kind && NO_ANSWER.test(s)) return {...r, meals:[], skip:true};   // 「안 먹었어」가 식사로 남지 않게 먼저
   if (!isEmptyParse(r) || !kind) return {...r, skip:false};
-  const n = s.match(/^(\d+(?:\.\d+)?)/);
+  const n = s.match(/^(\d+(?:\.\d+)?)/), yes = /^(응|어|그래|ㅇㅇ|웅|넹|네|예|당연|잘\s*잤)/.test(s);   // 「응」은 질문에 따라: 잘 잤어? → 7시간, 움직였어? → 운동
+  if (kind === 'sleep' && yes) return {...r, sleep:7, skip:false};
+  if (kind === 'move' && yes) return {...r, moves:[{type:'운동', min:30}], skip:false};
   if (kind === 'sleep' && n) return {...r, sleep:Math.min(14, +n[1]), skip:false};
-  if (kind === 'meal') return {...r, meals:[{when, name:mealName(s) || s}], skip:false};
+  if (kind === 'meal' && !yes) return {...r, meals:[{when, name:mealName(s) || s}], skip:false};
   if (kind === 'move') return {...r, moves:[{type:'운동', min:Math.max(5, Math.min(300, +(s.match(/(\d+)\s*분/)?.[1] ?? 30)))}], skip:false};
   return {...r, skip:false};
 }

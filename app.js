@@ -320,7 +320,7 @@ const summary = r => [
 // 기록 전후를 비교해 캐릭터가 차례로 대답 (시트·한 줄 입력 공용)
 function reactAfter(before, after, first = []){
   reactionTimers.forEach(clearTimeout);
-  const walked = !before.moves.length && after.moves.length && state.parkDay !== TODAY;   // 오늘 첫 운동이면 공원으로 초대
+  const walked = !before.moves.length && after.moves.some(m => OUTDOOR.includes(m.type)) && state.parkDay !== TODAY;   // 오늘 첫 운동이 밖에서 한 거면 공원으로 초대 (수영·헬스는 X)
   const list = [...first, ...reactionsAfterRecord(before, after, state.personality), ...(walked ? [{t:PARK_TALK[register()].invite, go:'park'}] : [])];
   reactionTimers = list.map((r, i) => setTimeout(() => playReaction(r), i*REACTION_GAP_MS));
   reactionTimers.push(askAfter(list.length*REACTION_GAP_MS));   // 다 대답하면 다음 질문
@@ -329,9 +329,12 @@ $('sayForm').onsubmit = e => {
   e.preventDefault();
   const text = $('sayInput').value.trim(); if (!text) return;
   chatPush(true, text);
+  const answer = t => { $('sayInput').value = ''; say(t); chatPush(false, t); askAfter(0); render(); hop(); };
+  const small = isEmptyParse(parseRecord(text, guessWhen())) && chitchatLine(text);   // 기록이 아닌 말이면 질문의 대답으로 받기 전에 잡담으로 (「안녕」이 음식이 되지 않게)
+  if (small) return answer(small);
   const r = parseAnswer(text, openAsk, guessWhen());
-  if (r.skip){ $('sayInput').value = ''; const t = pick(lines().rest); skipAsk(openAsk); say(t); chatPush(false, t); askAfter(0); render(); return; }
-  if (isEmptyParse(r)){ $('sayInput').value = ''; say(WHAT[register()], 5000); chatPush(false, WHAT[register()]); render(); hop(); return; }
+  if (r.skip){ const kind = openAsk; skipAsk(kind); return answer(SKIP_TALK[register()][kind] ?? pick(lines().rest)); }
+  if (isEmptyParse(r)) return answer(CHAT_ELSE[register()]);
   const before = todayRec(), L = lines();
   setToday({
     ...(r.mood ? {mood:r.mood} : {}), ...(r.rest ? {rest:true} : {}), ...(r.sleep != null ? {sleep:r.sleep} : {}),
@@ -343,7 +346,7 @@ $('sayForm').onsubmit = e => {
   const t = today(), food = r.meals.flatMap(m => hits(m.name));
   const first = [
     ...(r.mood && r.mood !== before.mood ? [{t:pick(L.mood[r.mood])}] : []),
-    ...(r.meals.length ? [{t:pick(L.ate) + (!food.length ? L.unknown : t.lack < 0 ? pick(L.full) : pick(L.crave[t.lack]))}] : []),
+    ...(r.meals.length ? [{t:pick(ATE_TALK[register()]).replace('{n}', r.meals[0].name) + (!food.length ? ` ${L.unknown}` : '')}] : []),   // 「김밥 맛있겠어요」
   ];
   reactAfter(before, todayRec(), first);
   chatUndo(before);   // 되돌리기는 내 말풍선 밑에 (chat.js). 위 알림은 대화창과 겹쳐서 안 띄움
@@ -375,7 +378,8 @@ function reactionsAfterRecord(before, after, personality){
     const level = after.sleep < 6 ? 'low' : after.sleep < 8 ? 'ok' : 'good';
     list.push({t:A[level], gesture:level === 'low' ? 'yawn' : 'reach'});
   }
-  if (after.moves.length && JSON.stringify(after.moves) !== JSON.stringify(before.moves)) list.push({t:A.move, act:'stretch'});
+  const newMove = after.moves.length > before.moves.length ? after.moves.at(-1) : null;
+  if (newMove) list.push({t:MOVE_TALK[PERSONALITIES[personality].register][newMove.type] ?? A.move, act:'stretch'});
   return list;
 }
 function playReaction(r){

@@ -49,3 +49,11 @@ document.addEventListener('haru:ready', () => {
   if (q) chatAsk();
   else chatPush(false, pick(lines().hello[timeOf(hourNow())]));
 });
+
+// 잡담: 기록이 아닌 말에 캐릭터가 대답 (talk.js 의 CHITCHAT)
+function chitchatLine(text){
+  const hit = CHITCHAT.find(([re]) => re.test(text.trim()));
+  if (!hit) return null;
+  return hit[1][register()].replace('{n이야}', josa(state.name, ['이야', '야'])).replace('{n이에요}', josa(state.name, ['이에요', '예요']))
+    .replace('{doing}', pick(lines().doing[nowActivity()]));
+}
