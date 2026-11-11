@@ -186,11 +186,12 @@ function worldLines(){   // 날씨·계절. 밤에 맑음·흐림이면 계절
   const W = WORLD[register()];
   return timeOf(hourNow()) === 'night' && (weather === 'clear' || weather === 'cloud') ? W.season[seasonOf(TODAY)] : Math.floor(talk / 8) % 2 ? W.weather[weather] : W.season[seasonOf(TODAY)];
 }
-function askLine(){   // 아직 안 남긴 것: 잠 → 식사 → 운동 순
+function askNow(){   // 아직 안 남긴 것: 기분 → 잠 → 식사 → 운동 순 (대화창 chat.js 도 씀)
   const d = todayRec(), A = ASK[register()], time = timeOf(hourNow());
-  if (d.sleep == null && time !== 'night') return A.sleep;
-  if (!d.meals.length) return A.meal[time];
-  if (!d.moves.length && !d.rest && time !== 'morning') return A.move;
+  if (!d.mood) return {kind:'mood', t:A.mood};
+  if (d.sleep == null && time !== 'night') return {kind:'sleep', t:A.sleep};
+  if (!d.meals.length) return {kind:'meal', t:A.meal[time]};
+  if (!d.moves.length && !d.rest && time !== 'morning') return {kind:'move', t:A.move};
   return null;
 }
 function speech(act){
@@ -199,11 +200,13 @@ function speech(act){
   if (newProp) return {t:newProp};
   if (reply) return {t:reply};
   if (!ACTIVITIES[act].spot) return {t:pick(L.doing[act]), go:'park'};   // 나가 있을 땐 인사 대신 쪽지 글
+  const q = askNow();   // 대화창에 물어본 게 남아 있으면 방 말풍선도 같은 말 (chat.js)
+  if (q && q.kind === openAsk) return {t:q.t, go:'say'};
   if (!greeted){
     if (state.visitDays <= 2 && !hasRecord(todayRec())) return {t:pick(L.shy)};
     return {t:pick(L.hello[timeOf(hourNow())])};
   }
-  if (talk % 3 === 0){ const q = askLine(); if (q) return {t:q, go:'say'}; }
+  if (talk % 3 === 0){ const q = askNow(); if (q) return {t:q.t, go:'say'}; }
   const met = recentMeets(3)[0];   // 친구 캐릭터와 만난 이야기 (town.js)
   if (talk % 7 === 6 && met) return {t:meetLine(met)};
   if (talk % 8 === 2) return {t:pick(worldLines())};
@@ -269,10 +272,7 @@ function gainItem(key){
   return true;
 }
 function drawPanel(){
-  const d = todayRec(), done = summary(d);
-  $('todayLine').textContent = done ? `오늘 남긴 것 · ${done}` : `오늘 한 일을 ${state.name || '캐릭터'}에게 말해 보세요`;
   $('sayInput').placeholder = `${state.name || '캐릭터'}에게 말해 주기…`;
-  $('moods').innerHTML = MOODS.map(([k, label]) => `<button type="button" class="chip mood" data-mood="${k}" aria-pressed="${d.mood === k}">${label}</button>`).join('');
 }
 function render(){
   const act = nowActivity();
@@ -295,13 +295,6 @@ $('char').onclick = () => {
 };
 $('bubble').onclick = () => { if (currentGo === 'meal') openMeal(-1); else if (currentGo === 'park') openPark(); else if (currentGo === 'say') $('sayInput').focus(); else { talk++; render(); } };
 $('note').onclick = () => openPark();   // 쪽지 = 공원에 나가 있어요 → 공원에서 만남 (town.js)
-$('moods').onclick = e => {
-  const b = e.target.closest('[data-mood]'); if (!b) return;
-  const k = b.dataset.mood, off = todayRec().mood === k;
-  setToday({mood:off ? null : k});
-  if (!off){ say(pick(lines().mood[k])); window.clarity?.('event', 'mood'); }   // Clarity Smart Event 후보
-  render(); if (!off) hop();
-};
 setInterval(() => { greeted = true; talk++; tick = Math.floor(Date.now()/60000); if (Date.now() >= overrideUntil) override = null; render(); }, 15000);
 
 // ── 한 줄 입력: 「점심에 김밥, 30분 걸었어」 → 잠·운동·식사·기분으로 나눠 남긴다 ──
@@ -315,12 +308,14 @@ function reactAfter(before, after, first = []){
   reactionTimers.forEach(clearTimeout);
   const list = [...first, ...reactionsAfterRecord(before, after, state.personality)];
   reactionTimers = list.map((r, i) => setTimeout(() => playReaction(r), i*REACTION_GAP_MS));
+  reactionTimers.push(askAfter(list.length*REACTION_GAP_MS));   // 다 대답하면 다음 질문
 }
 $('sayForm').onsubmit = e => {
   e.preventDefault();
   const text = $('sayInput').value.trim(); if (!text) return;
+  chatPush(true, text);
   const r = parseRecord(text, guessWhen());
-  if (isEmptyParse(r)){ say(WHAT[register()], 5000); render(); hop(); return; }
+  if (isEmptyParse(r)){ $('sayInput').value = ''; say(WHAT[register()], 5000); chatPush(false, WHAT[register()]); render(); hop(); return; }
   const before = todayRec(), L = lines();
   setToday({
     ...(r.mood ? {mood:r.mood} : {}), ...(r.rest ? {rest:true} : {}), ...(r.sleep != null ? {sleep:r.sleep} : {}),
@@ -328,6 +323,7 @@ $('sayForm').onsubmit = e => {
   });
   $('sayInput').value = '';
   window.clarity?.('event', 'record_line');   // Clarity Smart Event 후보: 알아들은 한 줄만
+  if (r.mood) window.clarity?.('event', 'mood');
   const t = today(), food = r.meals.flatMap(m => hits(m.name));
   const first = [
     ...(r.mood && r.mood !== before.mood ? [{t:pick(L.mood[r.mood])}] : []),
@@ -355,7 +351,8 @@ function drawRec(){
 }
 // 시트가 방을 가리므로 대답은 닫을 때 한다
 let recBefore = EMPTY_DAY, ateLine = null, reactionTimers = [];
-$('recBtn').onclick = () => { recBefore = todayRec(); ateLine = null; drawRec(); $('rec').returnValue = ''; $('rec').showModal(); };
+$('reviewBtn').onclick = () => $('calBtn').click();   // 오늘 기록 돌아보기 = 달력의 오늘 (고치기 버튼 있음)
+function openRec(){ recBefore = todayRec(); ateLine = null; drawRec(); $('rec').returnValue = ''; $('rec').showModal(); }
 function reactionsAfterRecord(before, after, personality){
   const A = AFTER_RECORD[personality], list = [];
   if (after.rest && !before.rest) return [{t:pick(LINES[personality].rest)}];
@@ -368,7 +365,7 @@ function reactionsAfterRecord(before, after, personality){
 }
 function playReaction(r){
   const current = nowActivity();
-  say(r.t);
+  say(r.t); chatPush(false, r.t);
   if (r.act) doFor(r.act, 8000);
   else if (current === 'nap' || current === 'walk') doFor('wander', 8000);   // 자거나 나가 있으면 먼저 나타난다
   clearTimeout(gestureTimer);
@@ -475,7 +472,8 @@ $('goals').onclose = () => { if ($('goals').returnValue === 'ok'){ state = {...s
 
 // ── 식사 ──
 let mealIdx = -1, whenDraft = '아침';
-const guessWhen = () => { const h = new Date().getHours(), k = h < 4 ? '간식' : h < 10 ? '아침' : h < 15 ? '점심' : h < 21 ? '저녁' : '간식';
+const guessWhen = () => { const h = hourNow(),   // 캐릭터 질문과 같은 시계
+ k = h < 4 ? '간식' : h < 10 ? '아침' : h < 15 ? '점심' : h < 21 ? '저녁' : '간식';
   return todayRec().meals.some(m => m.when === k) ? '간식' : k; };
 function frequentFoods(){   // 자주 먹은 음식 먼저. 앱이 추측해서 단정하지 않고 고르게만 한다
   const counts = Object.values(state.days).flatMap(d => d.meals).reduce((acc, m) => ({...acc, [m.name]:(acc[m.name] ?? 0) + 1}), {});
@@ -575,7 +573,7 @@ function dayDetail(key){
 $('calBtn').onclick = () => { calSel = TODAY; calMonth = new Date(dayNow().getFullYear(), dayNow().getMonth(), 1); drawCal(); $('calPage').showModal(); };
 $('calBody').onclick = e => {
   const nav = e.target.closest('[data-cm]'); if (nav){ calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() + +nav.dataset.cm, 1); calSel = null; drawCal(); return; }
-  if (e.target.closest('[data-edit]')){ $('recBtn').click(); return; }
+  if (e.target.closest('[data-edit]')){ openRec(); return; }
   const day = e.target.closest('[data-day]'); if (day){ calSel = calSel === day.dataset.day ? null : day.dataset.day; drawCal(); }
 };
 

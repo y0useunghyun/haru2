@@ -109,4 +109,9 @@ for (const W of Object.values(T.WORLD)){
 }
 eq([0, 6, 7, 20, 21, 59, 60, 400].map(T.deepStage), [0, 0, 1, 1, 2, 2, 3, 3]);
 for (const D of Object.values(T.DEEP)) assert.strictEqual(D.length, 4);
+// 대화창 빠른 대답은 모두 알아듣는 말이어야 함 (chat.js 의 QUICK)
+const QUICK = vm.runInContext(fs.readFileSync(`${__dirname}/chat.js`, 'utf8').match(/const QUICK = (\{[\s\S]*?\n\});/)[1].replace(/^/, '(') + ')', ctx);
+for (const t of [...QUICK.sleep, ...Object.values(QUICK.meal).flat(), ...QUICK.move]) assert.ok(!L.isEmptyParse(P(t)), t);
+assert.strictEqual(P('푹 잤어').sleep, 9);
+eq(['좋아', '보통', '힘들어', '안 좋아'].map(t => P(t).mood), ['good', 'soso', 'hard', 'hard']);
 console.log('check.js ok');

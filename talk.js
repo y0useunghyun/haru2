@@ -42,8 +42,8 @@ const WORLD = {
 
 // 아직 안 남긴 것을 캐릭터가 물어봄 → 말풍선을 누르면 입력칸으로
 const ASK = {
-  casual:{sleep:'잘 잤어? 몇 시간 잤어?', meal:{morning:'아침 먹었어?', noon:'점심 뭐 먹었어?', evening:'저녁은 뭐 먹었어?', night:'오늘 뭐 먹었어?'}, move:'오늘 좀 움직였어?'},
-  polite:{sleep:'잘 잤어요? 몇 시간 잤어요?', meal:{morning:'아침 먹었어요?', noon:'점심 뭐 먹었어요?', evening:'저녁은 뭐 먹었어요?', night:'오늘 뭐 먹었어요?'}, move:'오늘 좀 움직였어요?'},
+  casual:{mood:'지금 기분은 어때?', sleep:'잘 잤어? 몇 시간 잤어?', meal:{morning:'아침 먹었어?', noon:'점심 뭐 먹었어?', evening:'저녁은 뭐 먹었어?', night:'오늘 뭐 먹었어?'}, move:'오늘 좀 움직였어?'},
+  polite:{mood:'지금 기분은 어때요?', sleep:'잘 잤어요? 몇 시간 잤어요?', meal:{morning:'아침 먹었어요?', noon:'점심 뭐 먹었어요?', evening:'저녁은 뭐 먹었어요?', night:'오늘 뭐 먹었어요?'}, move:'오늘 좀 움직였어요?'},
 };
 
 // 함께 지낸 시간에 따라 조금씩 달라지는 말. 숫자는 말하지 않음

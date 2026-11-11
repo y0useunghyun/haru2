@@ -310,7 +310,7 @@ dialog{background:var(--bg);border:2px solid var(--ink);border-bottom:0}
 
 /* ── 도트 장면: 모두 가로 100칸, 비율 고정. 캐릭터 20칸 = 장면 폭 20% ── */
 .scene-img{position:absolute;inset:0;width:100%;height:100%}
-.scene{flex:none;height:auto;min-height:0;aspect-ratio:100/122;width:min(100%,calc((100dvh - 290px)*.82));margin:0 auto;background:#FFF3D6}
+.scene{flex:none;height:auto;min-height:0;aspect-ratio:100/122;width:min(100%,calc((100dvh - 330px)*.82));margin:0 auto;background:#FFF3D6}
 .actor{width:20cqw}
 .bubble{top:calc(var(--y)*1cqh - 27cqw)}
 .is-lying ~ .bubble{top:calc(var(--y)*1cqh - 18cqw)}
@@ -328,7 +328,7 @@ dialog{background:var(--bg);border:2px solid var(--ink);border-bottom:0}
 .pcard__img .kind{width:100%;height:56px;object-fit:contain}
 .shop-item .pcard__img .kind{height:96px}
 @media (min-width:600px) and (hover:hover) and (pointer:fine){
-  .scene{width:min(100%,calc((var(--ph) - 340px)*.82))}
+  .scene{width:min(100%,calc((var(--ph) - 380px)*.82))}
   .scene--first{width:min(calc(100% - 40px),calc((var(--ph) - 380px)*.82))}
   .scene--visit{width:min(calc(100% - 40px),calc((var(--ph) - 280px)*.82))}
   .scene--town{width:calc(100% - 40px)}
@@ -359,3 +359,21 @@ dialog{background:var(--bg);border:2px solid var(--ink);border-bottom:0}
 /* 나가 있을 땐 말풍선이 쪽지 위에 */
 .actor[hidden] ~ .bubble{top:calc(78cqh - 3cqw)}
 .cal-edit{margin-top:12px;width:100%}
+
+/* ── 대화창 (chat.js): 방 아래를 채우고, 기록만 스크롤 ── */
+#scene ~ .panel{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:8px}
+.mood-row{display:flex;align-items:center;gap:10px}
+.mood-row .panel__q{flex:none;font-size:14px}
+.mood-row .moods{flex:1}
+.mood-row .mood{min-height:36px;font-size:14px}
+.chat{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:8px;padding:10px;border:2px solid var(--ink);border-radius:16px;background:#fff;box-shadow:3px 3px 0 var(--ink)}
+.chat__log{flex:1 1 auto;min-height:44px;overflow-y:auto;scrollbar-width:none;display:flex;flex-direction:column;gap:6px}
+.chat__log > :first-child{margin-top:auto}   /* 적을 땐 아래부터 */
+.msg{max-width:80%;margin:0;padding:6px 10px;border:2px solid #3B2A20;border-radius:3px;background:#fff;color:#3B2A20;font-size:14px;line-height:1.4;align-self:flex-start;box-shadow:2px 2px 0 rgba(59,42,32,.25);overflow-wrap:anywhere}
+.msg--me{align-self:flex-end;background:#FFF3C4}
+.chat__quick{flex:none;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:0 2px 3px 0}
+.chat__quick[hidden]{display:none}
+.quick{flex:none;min-height:34px;padding:0 12px;font-size:14px}
+.chat .say{flex:none;margin-top:0}
+.chat .say__in{height:44px}
+.chat .say__go{width:44px;height:44px}
