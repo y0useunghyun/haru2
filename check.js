@@ -129,6 +129,7 @@ eq(H('밥을'), ['밥']); eq(H('김치국'), ['김치', '국']);
 eq(H('어떡해'), []); eq(H('면접'), []); eq(H('콩이랑'), []);
 // 기록에 대한 대답은 묻는 말이 아님 (대답 뒤에 캐릭터가 다음 질문을 하므로 질문이 겹치면 안 됨)
 for (const P_ of Object.values(T.LINES)) for (const t of [...Object.values(P_.mood).flat(), ...P_.ate]) assert.ok(!/\?\s*$/.test(t), t);
+for (const A_ of Object.values(run('AFTER_RECORD'))) for (const t of Object.values(A_)) assert.ok(!/\?\s*$/.test(t), t);
 // 공원 줍기: 같은 날짜면 같은 것, 계절 안에서
 const PK = run('({pickOn, PICKS, PICK_BY_ID})');
 assert.strictEqual(PK.pickOn(c, '2026-11-11'), PK.pickOn(c, '2026-11-11'));

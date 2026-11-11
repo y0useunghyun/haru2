@@ -214,7 +214,6 @@ function speech(act){
   if (talk % 7 === 6 && met) return {t:meetLine(met)};
   if (talk % 8 === 2) return {t:pick(worldLines())};
   if (talk % 9 === 5) return {t:pick(DEEP[register()][deepStage(daysBetween(state.born, TODAY))])};
-  if (talk % 5 === 4 && timeOf(hourNow()) !== 'night') return {t:pick(L.lazy)};
   if (talk % 3 === 1){ const s = statusLine(); if (s) return s; }
   return {t:pick(L.doing[act])};
 }
@@ -335,7 +334,7 @@ $('sayForm').onsubmit = e => {
     ...(r.meals.length ? [{t:pick(L.ate) + (!food.length ? L.unknown : t.lack < 0 ? pick(L.full) : pick(L.crave[t.lack]))}] : []),
   ];
   reactAfter(before, todayRec(), first);
-  showToast(`남겼어요 · ${summary(r)}`, () => { setToday(before); render(); });
+  chatUndo(before);   // 되돌리기는 내 말풍선 밑에 (chat.js). 위 알림은 대화창과 겹쳐서 안 띄움
   render();
 };
 

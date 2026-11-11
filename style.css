@@ -409,3 +409,4 @@ dialog{background:var(--bg);border:2px solid var(--ink);border-bottom:0}
 @media (min-width:600px) and (hover:hover) and (pointer:fine){ .scene--first{width:min(calc(100% - 40px),calc((var(--ph) - 440px)*.82))} }
 .vn__t:focus{outline:none}   /* 화면이 바뀌면 문장부터 읽히게 포커스만 줌 */
 .vn__opt[aria-pressed]::before{content:none}   /* 고르기(성격)는 ▶ 없이, 행동만 ▶ */
+.msg__undo{align-self:flex-end;margin:-2px 2px 0;min-height:28px;font-size:12px;color:var(--text-2);text-decoration:underline;text-underline-offset:3px}
