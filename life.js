@@ -196,7 +196,8 @@ function parseAnswer(text, kind, when){
   if (kind === 'sleep' && yes) return {...r, sleep:7, skip:false};
   if (kind === 'move' && yes) return {...r, moves:[{type:'운동', min:30}], skip:false};
   if (kind === 'sleep' && n) return {...r, sleep:Math.min(14, +n[1]), skip:false};
-  if (kind === 'meal' && !yes) return {...r, meals:[{when, name:mealName(s) || s}], skip:false};
+  // 식사 질문에 처음 보는 말: 한 단어(「오코노미야키」)나 「먹었어」가 들어간 말만 음식으로 (「오늘 시험 망쳤어」는 X — AI가 있으면 거기서 판단)
+  if (kind === 'meal' && !yes && (!/\s/.test(s) || /먹|마셨|마시|마심/.test(s))) return {...r, meals:[{when, name:mealName(s) || s}], skip:false};
   if (kind === 'move') return {...r, moves:[{type:'운동', min:Math.max(5, Math.min(300, +(s.match(/(\d+)\s*분/)?.[1] ?? 30)))}], skip:false};
   return {...r, skip:false};
 }

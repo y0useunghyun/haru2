@@ -116,6 +116,7 @@ for (const h of Object.values(HINT)) for (const t of h.replace('예: ', '').spli
 const ANS = (t, k) => run(`parseAnswer(${JSON.stringify(t)}, ${JSON.stringify(k)}, '점심')`);
 assert.strictEqual(ANS('6', 'sleep').sleep, 6);
 eq(ANS('쌀국수집 신메뉴', 'meal').meals.length, 1);
+eq(ANS('오코노미야키', 'meal').meals.length, 1); eq(ANS('오늘 시험 망쳤어', 'meal').meals.length, 0);
 eq(ANS('클라이밍', 'move').moves, [{type:'운동', min:30}]);
 assert.ok(ANS('안 먹었어', 'meal').skip); assert.strictEqual(ANS('안 좋아', 'mood').mood, 'hard'); assert.ok(!ANS('안 좋아', 'mood').skip); assert.ok(ANS('아니', 'move').skip);
 assert.strictEqual(ANS('김밥', 'sleep').meals[0].name, '김밥');   // 다른 걸 말해도 알아들은 건 그대로
