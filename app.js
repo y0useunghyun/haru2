@@ -347,7 +347,8 @@ $('sayForm').onsubmit = async e => {
   const small = isEmptyParse(parseRecord(text, guessWhen())) && chitchatLine(text);   // 기록이 아닌 말이면 질문의 대답으로 받기 전에 잡담으로 (「안녕」이 음식이 되지 않게)
   if (small) return answer(small);
   // 단어 표가 하나도 못 알아들은 말은 AI에게 (질문 문맥으로 억지로 받으면 「시험 망쳤어」가 음식이 됨). 안 되면 아래 단어 표 방식으로
-  if (isEmptyParse(parseRecord(text, guessWhen()))){
+  const r0 = parseRecord(text, guessWhen()), onlyMood = r0.mood && r0.sleep == null && !r0.meals.length && !r0.moves.length && !r0.rest;
+  if (isEmptyParse(r0) || (onlyMood && text.replace(/\s/g, '').length > 6)){   // 「친구랑 싸워서 속상해」처럼 기분 단어만 걸린 긴 문장도 AI가 맥락을 보고
     $('sayInput').value = '';
     const ai = await askAI(text);   // chat.js
     if (ai) return applyAI(ai);
@@ -756,6 +757,8 @@ function endFirst(){
   if ($('first').open) $('first').close();
   render();
   homeReady();
+  earn('welcome', COIN.back, false); earn('visit', COIN.visit);   // 첫날에도 가게를 써 볼 수 있게 (reward.js). 첫 방문은 첫 시작 전이라 여기서
+  showToast(`처음 만난 선물로 코인 ${COIN.back + COIN.visit}개를 받았어요`);
 }
 $('firstBody').addEventListener('click', e => {
   const act = e.target.closest('[data-first]')?.dataset.first;

@@ -65,5 +65,5 @@ function openTitle(){
   $('titleLogo').innerHTML = pxImg(logoImage(), 'title__logo-img');
   $('title').showModal();
 }
-$('titleGo').onclick = () => { $('title').close(); drawFirst(); $('first').showModal(); };
+$('titleGo').onclick = () => { $('title').close(); drawFirst(); $('first').showModal(); $('firstBody').querySelector('.vn__t')?.focus(); };   // showModal 이 「건너뛰기」에 포커스를 주지 않게
 $('title').oncancel = e => e.preventDefault();   // Esc 로 닫으면 빈 화면이 되니 막음

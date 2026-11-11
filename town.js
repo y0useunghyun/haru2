@@ -117,7 +117,7 @@ $('parkVn').onclick = e => {
 function openPark(){ vnNode = 'root'; vnLine = null; drawPark(); if (!$('parkPage').open) $('parkPage').showModal(); }
 $('parkScene').onclick = e => { if (e.target.closest('#parkChar')){ talk++; drawPark(); } };
 // 공원에서 같이 돌아오면 집에 있다
-$('parkPage').onclose = () => { if (nowActivity() === 'walk') doFor('wander', 60000); greeted = true; say(pick(lines().poke)); render(); };
+$('parkPage').onclose = () => { if (nowActivity() === 'walk') doFor('wander', 60000); greeted = true; say(pick(lines().poke)); render(); setTimeout(() => typeof proposePlay === 'function' && proposePlay(), 1500); };   // 공원 다녀오면 놀이 제안
 
 // ── 가게: 재화 없이 하루 하나, 아직 없는 물건 ──
 function drawShop(){   // 오늘의 물건은 공짜로 하나 + 코인으로 사기 (reward.js 의 shopBuyList)

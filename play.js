@@ -8,6 +8,7 @@ const playDone = new Set();   // 결과가 난 놀이 메시지 (버튼 숨김)
 
 function proposePlay(){
   if (playOffered || state.playDay === TODAY || !state.met) return;
+  if (state.parkDay !== TODAY && chat.some(m => m.go === 'park')) return;   // 공원 초대가 먼저 → 다녀온 뒤에 (town.js 공원 닫을 때)
   playOffered = true;
   const game = hash(`${state.seed}|play|${TODAY}`) % 2 ? 'stretch' : 'rps';
   chatPush(false, PLAY_TALK[register()][game], `play:${game}`);
@@ -41,7 +42,8 @@ function holdEnd(){
   const mine = performance.now() - holdAt, char = STRETCH_MIN_MS + hash(`${state.seed}|stretch|${TODAY}`) % STRETCH_SPAN_MS;
   holdAt = 0;
   const T = PLAY_TALK[register()], s = ms => `${(ms / 1000).toFixed(1)}초`;
-  finishPlay(holdMsg, `${s(mine)} 쭉!`, `${s(char)}! ${mine > char ? T.sLose : T.sWin}`);
+  const a = Math.round(mine / 100), b = Math.round(char / 100);   // 보이는 숫자(0.1초)로 비교 — 같아 보이는데 지면 이상함
+  finishPlay(holdMsg, `${s(mine)} 쭉!`, `${s(char)}! ${a === b ? T.draw : a > b ? T.sLose : T.sWin}`);
 }
 $('chatLog').addEventListener('pointerdown', e => { const b = e.target.closest('[data-play="hold"]'); if (b){ e.preventDefault(); holdStart(+b.dataset.id); } });
 document.addEventListener('pointerup', holdEnd);
