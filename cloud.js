@@ -4,7 +4,7 @@
 // ponytail: 두 기기에서 동시에 쓰면 나중에 저장한 쪽이 이김. 실시간 병합이 필요해지면 날짜별로 나눠 저장
 
 // 프로젝트 주소와 publishable(anon) 키. 공개돼도 되는 키라 코드에 둠 (막는 건 RLS)
-const CLOUD = {url:'', key:''};
+const CLOUD = {url:'https://bkzmrhcpkloycggkrwhi.supabase.co', key:'sb_publishable_QENJ13EFWMBHk1AC6xeR_w_CsnUlRKK'};
 const CLOUD_PUSH_MS = 2000;
 
 let sb = null, cloudUser = null, cloudTimer = null, cloudNote = '';
@@ -59,6 +59,7 @@ function cloudSection(){
       : `<p class="sub">기록은 서버에도 저장돼요. 이메일을 연결하면 폰·컴퓨터에서 이어서 쓸 수 있어요.</p>
         <input class="field" id="cloudEmail" type="email" inputmode="email" autocomplete="email" placeholder="이메일" aria-label="이메일">
         <div class="chips"><button type="button" class="chip" id="cloudLink">이 기록에 연결</button><button type="button" class="chip" id="cloudLogin">다른 기기 기록 불러오기</button></div>`}
+    <p class="sub">기분·잠·식사 기록은 나만 볼 수 있어요. 친구에게는 방과 캐릭터만 보여요.</p>
     ${cloudNote ? `<p class="sub" role="status">${esc(cloudNote)}</p>` : ''}`;
 }
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
