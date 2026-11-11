@@ -59,6 +59,8 @@ function normalize(raw){
     friends:cleanList(raw.friends, 30, cleanFriend),
     mail:cleanList(raw.mail, 100, cleanMail),
     shopDay:isDateKey(raw.shopDay) ? raw.shopDay : null,
+    picks:cleanList(raw.picks, 400, x => PICK_BY_ID[x?.id] && isDateKey(x.date) ? {id:x.id, date:x.date} : null),   // 공원에서 주운 것 → 책상 위 병
+    parkDay:isDateKey(raw.parkDay) ? raw.parkDay : null,   // 오늘 공원에서 골랐는지
     days,
   };
 }
@@ -159,7 +161,8 @@ function myKinds(){
 // 방 그림은 도트 한 장 (pixel-room.js). 밤 어둠은 위에 덮는 층
 function sceneBase({bare = false, kinds = myKinds()} = {}){
   const time = timeOf(hourNow());
-  return `${pxImg(roomImage(kinds, time, weather, bare), 'scene-img')}<div class="night" data-time="${time}" data-lamp="${!bare && kinds.lamp != null}"></div>`;
+  const jar = bare ? [] : state.picks.map(p => PICK_BY_ID[p.id].c);
+  return `${pxImg(roomImage(kinds, time, weather, bare, jar), 'scene-img')}<div class="night" data-time="${time}" data-lamp="${!bare && kinds.lamp != null}"></div>`;
 }
 
 // ── 캐릭터 생활 ──
@@ -223,7 +226,7 @@ function say(text, ms = 3500){
 
 let lastSceneKey = '', lastCharKey = '', currentGo = null;
 function drawScene(){
-  const key = JSON.stringify([timeOf(hourNow()), weather, myKinds()]);
+  const key = JSON.stringify([timeOf(hourNow()), weather, myKinds(), state.picks.length]);
   if (key !== lastSceneKey){ $('sceneBase').innerHTML = sceneBase(); lastSceneKey = key; }
 }
 function drawActor(act){
@@ -306,7 +309,8 @@ const summary = r => [
 // 기록 전후를 비교해 캐릭터가 차례로 대답 (시트·한 줄 입력 공용)
 function reactAfter(before, after, first = []){
   reactionTimers.forEach(clearTimeout);
-  const list = [...first, ...reactionsAfterRecord(before, after, state.personality)];
+  const walked = !before.moves.length && after.moves.length && state.parkDay !== TODAY;   // 오늘 첫 운동이면 공원으로 초대
+  const list = [...first, ...reactionsAfterRecord(before, after, state.personality), ...(walked ? [{t:PARK_TALK[register()].invite, go:'park'}] : [])];
   reactionTimers = list.map((r, i) => setTimeout(() => playReaction(r), i*REACTION_GAP_MS));
   reactionTimers.push(askAfter(list.length*REACTION_GAP_MS));   // 다 대답하면 다음 질문
 }
@@ -365,7 +369,7 @@ function reactionsAfterRecord(before, after, personality){
 }
 function playReaction(r){
   const current = nowActivity();
-  say(r.t); chatPush(false, r.t);
+  say(r.t); chatPush(false, r.t, r.go);
   if (r.act) doFor(r.act, 8000);
   else if (current === 'nap' || current === 'walk') doFor('wander', 8000);   // 자거나 나가 있으면 먼저 나타난다
   clearTimeout(gestureTimer);

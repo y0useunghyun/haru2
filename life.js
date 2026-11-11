@@ -114,6 +114,15 @@ function shopItem(c, today){
 }
 const itemOf = key => { const [id, k] = key.split(':'); const p = PROPS.find(x => x.id === id); return {p, k:+k, name:p.kinds[+k]}; };
 
+// ── 공원에서 줍는 것: 계절마다 둘, 날짜로 하나 (미연시처럼 「주워 간다/그냥 둔다」) ──
+const PICKS = {
+  spring:[{id:'petal', name:'벚꽃잎', c:'#FFB3C7', see:'벤치 위에 벚꽃잎이 내려앉아 있다.'}, {id:'dandelion', name:'민들레', c:'#FFD23F', see:'길가에 민들레가 피어 있다.'}],
+  summer:[{id:'clover', name:'네잎클로버', c:'#5FC79F', see:'잔디 사이에 잎이 네 개인 클로버가 보인다.'}, {id:'pebble', name:'조약돌', c:'#C9C2B8', see:'연못가에 매끈한 조약돌이 있다.'}],
+  autumn:[{id:'maple', name:'단풍잎', c:'#F2945C', see:'발밑에 빨간 단풍잎이 떨어져 있다.'}, {id:'acorn', name:'도토리', c:'#A0663A', see:'나무 아래 도토리가 굴러다닌다.'}],
+  winter:[{id:'pinecone', name:'솔방울', c:'#8A5A3A', see:'눈 위에 솔방울이 하나 떨어져 있다.'}, {id:'snowstone', name:'하얀 조약돌', c:'#F4F7FB', see:'눈 사이로 하얀 조약돌이 보인다.'}],
+};
+const PICK_BY_ID = Object.fromEntries(Object.values(PICKS).flat().map(p => [p.id, p]));
+const pickOn = (c, date) => { const list = PICKS[seasonOf(date)]; return list[hash(`${c.seed}|pick|${date}`) % list.length]; };
 const seasonOf = key => { const m = +key.slice(5, 7); return m >= 3 && m <= 5 ? 'spring' : m >= 6 && m <= 8 ? 'summer' : m >= 9 && m <= 11 ? 'autumn' : 'winter'; };
 
 // ── 음식 이름 → 아는 음식 ──

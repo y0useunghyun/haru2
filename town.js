@@ -63,8 +63,8 @@ function drawPark(){
   const act = PARK_ACTS[hash(`${state.seed}|park|${tick}`) % PARK_ACTS.length];
   const mine = ev ? ev.pair[0] : PARK_SPOTS[act];
   const walkers = state.friends.filter(f => f !== date && friendNow(f) === 'walk').slice(0, WALKER_SPOTS.length);
-  const line = ev ? meetLine({f:date, date:TODAY, ev})
-    : walkers.length && talk % 2 ? fill(R.friend, {n:walkers[0].room.name}) : fill(R[act][talk % R[act].length], {s:SEASONS[key].label});
+  const line = vnLine ?? (ev ? meetLine({f:date, date:TODAY, ev})
+    : walkers.length && talk % 2 ? fill(R.friend, {n:walkers[0].room.name}) : fill(R[act][talk % R[act].length], {s:SEASONS[key].label}));
   const actor = (look, at, id = '') => `<div class="actor actor--static" style="--x:${at.x};--y:${at.y}">${id
     ? `<button type="button" class="char" id="${id}" aria-label="${esc(state.name)} 쓰다듬기">` : '<div class="char">'}${avatar(look, {shadow:false})}${id ? '</button>' : '</div>'}</div>`;
   $('parkScene').innerHTML = `<div class="scene__base">${parkScene(key, time)}</div>
@@ -75,8 +75,24 @@ function drawPark(){
     <div class="night" data-time="${time}"></div>`;
   const names = [...(date ? [date] : []), ...walkers].map(f => f.room.name);
   $('parkSub').textContent = names.length ? `${names.join(', ')}도 공원에 나와 있어요` : `${SEASONS[key].label} 공원이에요`;
+  drawVn();
 }
-function openPark(){ drawPark(); if (!$('parkPage').open) $('parkPage').showModal(); }
+// 미연시처럼: 보이는 것 한 줄 + 고르기. 하루 한 번
+let vnLine = null;
+function drawVn(){
+  const it = pickOn(state, TODAY), took = state.picks.find(p => p.date === TODAY);
+  $('parkVn').innerHTML = state.parkDay !== TODAY
+    ? `<p class="vn__t">${it.see}</p><div class="vn__opts"><button type="button" class="vn__opt" data-vn="take">${josa(it.name, ['을', '를'])} 주워 간다</button><button type="button" class="vn__opt" data-vn="leave">그냥 둔다</button></div>`
+    : `<p class="vn__t">${took ? `오늘 주운 ${PICK_BY_ID[took.id].name}, 책상 위 병에 있다.` : '오늘은 천천히 걷기만 했다.'}</p>`;
+}
+$('parkVn').onclick = e => {
+  const b = e.target.closest('[data-vn]'); if (!b || state.parkDay === TODAY) return;
+  const it = pickOn(state, TODAY), take = b.dataset.vn === 'take';
+  state = {...state, parkDay:TODAY, picks:take ? [...state.picks, {id:it.id, date:TODAY}] : state.picks};
+  vnLine = PARK_TALK[register()][take ? 'take' : 'leave'];
+  render(); drawPark();
+};
+function openPark(){ vnLine = null; drawPark(); if (!$('parkPage').open) $('parkPage').showModal(); }
 $('parkScene').onclick = e => { if (e.target.closest('#parkChar')){ talk++; drawPark(); } };
 // 공원에서 같이 돌아오면 집에 있다
 $('parkPage').onclose = () => { if (nowActivity() === 'walk') doFor('wander', 60000); greeted = true; say(pick(lines().poke)); render(); };

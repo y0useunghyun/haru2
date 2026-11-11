@@ -114,16 +114,23 @@ function drawDesk(p){
   p.shape(rbox(70, 41, 79, 44), '#FFD23F');
 }
 // 방 한 장: kinds = {칸: 종류}. bare = 빈 방 (첫 시작)
-function roomImage(kinds, time, weather, bare = false){
+// 공원에서 주운 것을 담는 병: 책상 위 책과 소품 사이 (79~85). 아래부터 차고 최근 20개만
+function drawJar(p, colors){
+  const x = 79, y = 35;
+  p.shape(rbox(x, y + 2, x + 6, y + 9), '#EAF6FF');
+  colors.slice(-20).forEach((c, i) => p.dot(x + 1 + i % 4, y + 7 - Math.floor(i / 4), c));
+  p.rect(x + 1, y + 1, 4, 2, WOOD);
+}
+function roomImage(kinds, time, weather, bare = false, jar = []){
   const on = bare ? {window:kinds.window ?? 0} : kinds;
-  return pxImage(`room|${JSON.stringify(on)}|${time}|${weather}|${bare}`, ROOM_W, ROOM_H, p => {
+  return pxImage(`room|${JSON.stringify(on)}|${time}|${weather}|${bare}|${jar.slice(-20).join()}`, ROOM_W, ROOM_H, p => {
     const wall = on.wallpaper != null ? WALL_PAT[on.wallpaper] : WALL_BASE, floor = on.floor != null ? FLOOR_PAT[on.floor] : FLOOR_BASE;
     for (let y = 0; y < WALL_H; y++) for (let x = 0; x < ROOM_W; x++) p.dot(x, y, wall(x, y));
     for (let y = WALL_H; y < ROOM_H; y++) for (let x = 0; x < ROOM_W; x++) p.dot(x, y, floor(x, y));
     p.rect(0, WALL_H - 3, ROOM_W, 3, WOOD_L); p.rect(0, WALL_H - 3, ROOM_W, 1, OUT); p.rect(0, WALL_H, ROOM_W, 1, OUT);   // 걸레받이
     const item = id => { const a = ITEM_ART[id]; if (on[id] != null) a.kinds[on[id]](p, a.at[0], a.at[1], {time, weather}); };
     ['window', 'curtain', 'frame', 'clock', 'garland'].forEach(item);
-    if (!bare){ drawBed(p); item('chair'); drawDesk(p); }
+    if (!bare){ drawBed(p); item('chair'); drawDesk(p); if (jar.length) drawJar(p, jar); }
     ['desktop', 'rug', 'plant', 'lamp', 'books'].forEach(item);
   });
 }

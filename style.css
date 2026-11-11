@@ -371,3 +371,16 @@ dialog{background:var(--bg);border:2px solid var(--ink);border-bottom:0}
 .chat .say{flex:none;margin-top:0}
 .chat .say__in{height:44px}
 .chat .say__go{width:44px;height:44px}
+
+/* ── 공원: 미연시처럼 아래 대화창 + 고르기 ── */
+.scene--park{width:min(calc(100% - 40px),calc((100dvh - 330px)*.82))}
+@media (min-width:600px) and (hover:hover) and (pointer:fine){ .scene--park{width:min(calc(100% - 40px),calc((var(--ph) - 370px)*.82))} }
+.vn{margin:12px 20px 0;padding:12px 14px;border:2px solid #3B2A20;border-radius:4px;background:#fff;box-shadow:3px 3px 0 #3B2A20}
+.vn__t{margin:0;font-size:15px;line-height:1.5;color:#3B2A20}
+.vn__opts{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.vn__opt{min-height:44px;padding:0 14px;border:2px solid #3B2A20;border-radius:4px;background:#FFF3C4;color:#3B2A20;font-size:15px;font-weight:600;text-align:left}
+.vn__opt::before{content:'▶ '}
+.vn__opt:active{transform:translate(1px,1px)}
+.msg__go{display:block;margin-top:6px;min-height:32px;padding:0 10px;border:2px solid #3B2A20;border-radius:4px;background:#FFF3C4;font-size:13px;font-weight:600;color:#3B2A20}
+#parkPage .park__sub{margin-bottom:0}
+#parkPage .vn{margin-bottom:auto}   /* 그림 + 대화창을 한 덩어리로 가운데 */
