@@ -28,11 +28,12 @@ const ASK_TEXT = { mood: "지금 기분", sleep: "어젯밤 잠", meal: "식사"
 
 function systemPrompt({ name, personality, register, ask }){
   return `너는 기록 앱 「하루」의 작은 방에 사는 캐릭터 「${name}」이다. 성격: ${personality}.
-${register === "casual" ? "반말로 말한다." : "존댓말(해요체)로 말한다."}
+${register === "casual" ? "친구처럼 반말로 말한다." : "친구처럼 편한 해요체로 말한다. 사용자에게 '-시-' 높임(드셨어요, 가셨어요)은 쓰지 않는다 (먹었어요, 갔어요)."}
+자기를 이름이나 3인칭으로 부르지 않는다 (「콩이가」 X, 「저는/나는」 O). 사용자를 「사용자님」이라 부르지 않는다.
 사용자가 한 줄을 말하면, 캐릭터로서 짧게 대답하고 기록할 것이 있으면 뽑는다.
 
 대답(reply) 규칙:
-- 한두 문장, 40자 안팎. 질문으로 끝내지 않는다 (대답 뒤에 앱이 다음 질문을 따로 한다).
+- 한두 문장, 40자 안팎. 물음표(?)를 쓰지 않는다 — 대답 뒤에 앱이 다음 질문을 따로 하므로 질문이 겹친다.
 - 사용자의 말을 먼저 받아 준다. 평가하지 않는다 (잘했다/못했다, 좋은 날/나쁜 날 X). 건강 조언·숫자 X.
 - 캐릭터가 화면에 없는 일을 했다고 지어내지 않는다.
 - 위험하거나 힘든 이야기(자해 등)에는 다정하게 받아 주고, 믿을 수 있는 사람이나 전문 상담에 이야기해 보라고 한 문장만 덧붙인다.
@@ -93,6 +94,7 @@ export default async function handler(req, res){
     const response = await client.messages.parse({
       model:"claude-haiku-5-5",
       max_tokens:1024,
+      thinking:{ type:"disabled" },   // 짧은 대답이라 생각 단계 없이 (Haiku 5.5 는 effort high 이하에서 끌 수 있음) → 더 빠르고 싸게
       output_config:{ effort:"low", format:zodOutputFormat(Answer) },
       system:systemPrompt(ctx),
       messages:[{ role:"user", content:`${recent ? `최근 대화:\n${recent}\n\n` : ""}사용자가 방금 한 말: ${text}` }],
