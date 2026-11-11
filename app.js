@@ -61,6 +61,8 @@ function normalize(raw){
     shopDay:isDateKey(raw.shopDay) ? raw.shopDay : null,
     picks:cleanList(raw.picks, 400, x => PICK_BY_ID[x?.id] && isDateKey(x.date) ? {id:x.id, date:x.date} : null),   // 공원에서 주운 것 → 책상 위 병
     parkDay:isDateKey(raw.parkDay) ? raw.parkDay : null,   // 오늘 공원에서 골랐는지
+    savedAt:typeof raw.savedAt === 'string' && !isNaN(Date.parse(raw.savedAt)) ? raw.savedAt : null,   // 서버와 비교용 (cloud.js)
+    cloudUid:typeof raw.cloudUid === 'string' && /^[0-9a-f-]{36}$/.test(raw.cloudUid) ? raw.cloudUid : null,
     days,
   };
 }
@@ -76,8 +78,17 @@ function showToast(text, undo = null){
   $('toastUndo').onclick = () => { $('toast').hidden = true; undo?.(); };
   clearTimeout(showToast.t); showToast.t = setTimeout(() => { $('toast').hidden = true; }, undo ? 7000 : 5000);
 }
+// 내용이 바뀌었을 때만 저장 시각을 찍고 서버에도 보냄 (render 가 15초마다 save 를 불러도 같은 내용이면 그대로)
+let lastSaved = '';
+const contentOf = s => JSON.stringify({...s, savedAt:null, cloudUid:null});
+const markSaved = () => { lastSaved = contentOf(state); };   // 불러온 직후: 열기만 해서는 저장 시각이 안 바뀌게 (cloud.js 도 씀)
 function save(){
   if (NO_SAVE) return;
+  const body = contentOf(state);
+  if (body === lastSaved) return;
+  lastSaved = body;
+  state = {...state, savedAt:new Date().toISOString()};
+  if (typeof cloudQueue === 'function') cloudQueue();   // cloud.js
   try { localStorage.setItem(KEY, JSON.stringify(state)); }
   catch (err){ console.warn('저장 실패', err); showToast('저장하지 못했어요. 캐릭터 페이지에서 기록을 파일로 저장해 주세요'); }
 }
@@ -99,6 +110,7 @@ function demoState(){
 // ── 상태 ──
 const saved = loadSaved();
 let state = DEMO ? demoState() : normalize(saved ?? {});
+markSaved();
 if (params.get('p') && PERSONALITIES[params.get('p')]) state = {...state, personality:params.get('p')};
 if (AWAY){
   const n = Math.max(1, parseInt(params.get('away'), 10) || 3);
@@ -634,8 +646,9 @@ function drawCharPage(){
     ${memoriesOf().map(([d, t]) => `<div class="row"><div class="row__h"><span>${t}</span><span class="num">${d}</span></div></div>`).join('')}
     <p class="sec">설정</p>
     <div class="chips"><button type="button" class="chip" id="decoBtn">꾸미기</button><button type="button" class="chip" id="goalBtn">하루 목표</button></div>
+    ${cloudSection()}
     <p class="sec">기록 보관</p>
-    <p class="sub">기록은 이 브라우저에만 있어요. 브라우저 데이터를 지우면 함께 사라져요.</p>
+    <p class="sub">${cloudUser ? '파일로도 따로 보관할 수 있어요.' : '기록은 이 브라우저에만 있어요. 브라우저 데이터를 지우면 함께 사라져요.'}</p>
     <div class="chips"><button type="button" class="chip" id="exportBtn">파일로 저장</button><label class="chip chip--file">파일에서 불러오기<input type="file" id="importInput" accept="application/json,.json" hidden></label></div>`;
 }
 $('charBtn').onclick = () => { drawCharPage(); $('charPage').showModal(); };
@@ -760,6 +773,7 @@ setInterval(checkDay, 60000);
 function start(){
   render();
   loadWeather();
+  cloudStart().catch(err => console.warn('서버 연결 안 됨, 이 기기에만 저장', err));   // cloud.js
   if (!state.met) openTitle();   // 타이틀 → 시작하기 → 첫 시작 (title.js)
   else if (awayEntries.length) openBack();
   else homeReady();
