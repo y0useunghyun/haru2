@@ -98,7 +98,8 @@ export default async function handler(req, res){
       messages:[{ role:"user", content:`${recent ? `최근 대화:\n${recent}\n\n` : ""}사용자가 방금 한 말: ${text}` }],
     });
     if (response.stop_reason === "refusal" || !response.parsed_output) return res.status(200).json({ fallback:true });
-    return res.status(200).json(response.parsed_output);
+    const usage = { input:response.usage.input_tokens, output:response.usage.output_tokens };   // 요금 확인용
+    return res.status(200).json({ ...response.parsed_output, usage });
   } catch (err){
     console.error("AI 대답 실패", err);
     return res.status(200).json({ fallback:true });   // 앱은 단어 표 대답으로
