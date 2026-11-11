@@ -52,8 +52,9 @@ document.addEventListener('haru:ready', () => {
 
 // 잡담: 기록이 아닌 말에 캐릭터가 대답 (talk.js 의 CHITCHAT)
 function chitchatLine(text){
-  const hit = CHITCHAT.find(([re]) => re.test(text.trim()));
+  const rest = text.trim().replace(/^[ㅋㅎ]+[\s!~.]*/, '');   // 「ㅋㅋ 너는 뭐했어?」는 웃음 뒤의 말을 먼저 봄
+  const hit = CHITCHAT.find(([re]) => re.test(rest || text.trim()));
   if (!hit) return null;
   return hit[1][register()].replace('{n이야}', josa(state.name, ['이야', '야'])).replace('{n이에요}', josa(state.name, ['이에요', '예요']))
-    .replace('{doing}', pick(lines().doing[nowActivity()]));
+    .replace('{doing}', pick(lines().doing[nowActivity()])).replace('{past}', pastLines()[activityFor(state, TODAY, 11)]);
 }
