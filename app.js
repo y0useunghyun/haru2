@@ -392,7 +392,8 @@ function reactionsAfterRecord(before, after, personality){
   if (after.rest && !before.rest) return [{t:pick(LINES[personality].rest)}];
   if (after.sleep != null && after.sleep !== before.sleep){
     const level = after.sleep < 6 ? 'low' : after.sleep < 8 ? 'ok' : 'good';
-    list.push({t:A[level], gesture:level === 'low' ? 'yawn' : 'reach'});
+    const h = `${Math.floor(after.sleep)}시간${after.sleep % 1 ? ' 반' : ''}`;   // 내 말을 먼저 받고 자기 이야기 (「5시간밖에 못 잤군요. 눈이 무거워요」)
+    list.push({t:`${SLEEP_ACK[PERSONALITIES[personality].register][level].replace('{h}', h)} ${A[level]}`, gesture:level === 'low' ? 'yawn' : 'reach'});
   }
   const newMove = after.moves.length > before.moves.length ? after.moves.at(-1) : null;
   if (newMove) list.push({t:MOVE_TALK[PERSONALITIES[personality].register][newMove.type] ?? A.move, act:'stretch'});
@@ -663,13 +664,13 @@ function drawCharPage(){
     <div class="me"><div class="me__av thumb">${avatar(state.look, {crop:'face'})}</div>
       <div class="me__t"><label class="me__label" for="nameInput">이름</label><input class="field" id="nameInput" maxlength="12" value="${esc(state.name)}"><p class="sub">${P_.label}</p></div></div>
     ${rewardSection()}
-    <p class="sec">요즘 좋아하는 것</p>
+    <p class="sec">${esc(josa(state.name, ['이가', '가']))} 요즘 좋아하는 것</p>
     <div class="chips">${interestsOn(state, TODAY).map(id => `<span class="tag">${INTERESTS[id].label}</span>`).join('')}</div>
-    <p class="sub" style="margin-top:8px">소품 ${owned().size} / ${ALL_ITEMS.length}</p>
-    <p class="sec">기억</p>
+    <p class="sub" style="margin-top:8px">방 소품 ${owned().size} / ${ALL_ITEMS.length}</p>
+    <p class="sec">함께한 기억</p>
     ${memoriesOf().map(([d, t]) => `<div class="row"><div class="row__h"><span>${t}</span><span class="num">${d}</span></div></div>`).join('')}
     <p class="sec">설정</p>
-    <div class="chips"><button type="button" class="chip" id="decoBtn">꾸미기</button><button type="button" class="chip" id="goalBtn">하루 목표</button></div>
+    <div class="chips"><button type="button" class="chip" id="decoBtn">캐릭터 꾸미기</button><button type="button" class="chip" id="goalBtn">하루 목표</button></div>
     ${cloudSection()}
     <p class="sec">기록 보관</p>
     <p class="sub">${cloudUser ? '파일로도 따로 보관할 수 있어요.' : '기록은 이 브라우저에만 있어요. 브라우저 데이터를 지우면 함께 사라져요.'}</p>
