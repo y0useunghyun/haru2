@@ -113,6 +113,13 @@ const townScene = (season, time) => pxImg(townImage(season, time), 'scene-img')
 
 // ── 공원 ──
 const PARK_PX_W = 100, PARK_PX_H = 122;
+// 그네: 오른쪽 (기둥 77·97, 가로대 57~60, 앉는 판 82~85). 캐릭터 20칸이 기둥 사이에 들어가게
+function drawSwing(p, season){
+  [77, 97].forEach(x => p.shape(box(x, 59, x + 2, 93), '#C9573F'));
+  p.shape(rbox(76, 57, 100, 60), '#E07A5F');
+  [81, 94].forEach(x => p.line(x, 60, x, 82, '#6B5E4E'));
+  p.shape(rbox(79, 82, 97, 85), season === 'winter' ? '#FFFFFF' : WOOD);
+}
 function parkImage(season, time){
   return pxImage(`park|${season}|${time}`, PARK_PX_W, PARK_PX_H, p => {
     const s = PX_SEASON[season], W = PARK_PX_W, H = PARK_PX_H, winter = season === 'winter';
@@ -130,16 +137,17 @@ function parkImage(season, time){
     if (!winter){ p.shape(ell(81, 102, 2.2, 1.3), '#5FC79F', '#3E8C5E'); p.shape(ell(70, 106, 2, 1.2), '#5FC79F', '#3E8C5E'); p.line(60, 100, 60, 94, OUT); p.line(62, 101, 62, 92, OUT); p.dot(62, 91, '#8A5A3A'); p.dot(62, 92, '#8A5A3A'); }
     [[59, 106], [62, 110], [92, 108], [88, 111]].forEach(([x, y]) => p.shape(ell(x, y, 1.8, 1.4), '#A89C8C', '#6B5E4E'));
     // 나무·가로등·울타리·벤치
-    pxTree(p, 88, 58, .55, season);
+    drawSwing(p, season);
     pxTree(p, 18, 82, 1, season);
     pxLamp(p, 40, 52, 81, time === 'night' || time === 'evening');
     [80, 86, 92, 98].forEach(x => p.shape(box(x, 53, x + 2, 63), WOOD));
     [55, 59].forEach(y => p.rect(79, y, 21, 2, WOOD_D));
-    [[54, 78], [72, 78]].forEach(([x, y]) => p.shape(box(x, y, x + 2, y + 7), WOOD_D));
-    [[55, 68], [73, 68]].forEach(([x, y]) => p.shape(box(x, y, x + 2, y + 8), WOOD_D));
-    p.shape(rbox(52, 65, 77, 69), WOOD); p.shape(rbox(52, 69, 77, 73), WOOD);
-    p.shape(rbox(50, 75, 79, 79), (x, y) => (winter && y === 76 ? '#FFFFFF' : WOOD_D));
-    for (let x = 51; x < 79; x++) if (x % 3) p.dot(x, 85, 'rgba(59,42,32,.25)');
+    // 벤치 (그네 자리 때문에 왼쪽으로 4칸)
+    [[50, 78], [68, 78]].forEach(([x, y]) => p.shape(box(x, y, x + 2, y + 7), WOOD_D));
+    [[51, 68], [69, 68]].forEach(([x, y]) => p.shape(box(x, y, x + 2, y + 8), WOOD_D));
+    p.shape(rbox(48, 65, 73, 69), WOOD); p.shape(rbox(48, 69, 73, 73), WOOD);
+    p.shape(rbox(46, 75, 75, 79), (x, y) => (winter && y === 76 ? '#FFFFFF' : WOOD_D));
+    for (let x = 47; x < 75; x++) if (x % 3) p.dot(x, 85, 'rgba(59,42,32,.25)');
     // 계절 장식
     pxLitter(p, 2, 56, 96, 62, season, 26, 7);
     if (winter){ p.shape(ell(10, 112, 5), '#FFFFFF'); p.shape(ell(10, 104, 3.6), '#FFFFFF'); p.dot(9, 103, OUT); p.dot(11, 103, OUT); p.dot(12, 104, '#E8835F'); }

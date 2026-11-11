@@ -278,7 +278,6 @@ dialog{background:var(--bg);border:2px solid var(--ink);border-bottom:0}
 .friend-row__t .sub{margin-top:2px}
 .friend-row + .chips,.sec + .sub + .chips{margin-top:16px}
 .scene--visit{margin:12px 20px 0}
-.park__sub{flex:none;padding:12px 20px max(20px,env(safe-area-inset-bottom));text-align:center}
 .visit__bar{flex:none;display:flex;flex-direction:column;align-items:center;gap:12px;padding:0 20px max(20px,env(safe-area-inset-bottom))}
 .visit__bar .primary{margin:16px 0 0;width:100%}
 .shop-item{display:flex;flex-direction:column;align-items:center;gap:8px;padding:20px;border:2px solid var(--ink);border-radius:20px;background:#fff;box-shadow:3px 3px 0 var(--ink)}
@@ -302,7 +301,6 @@ dialog{background:var(--bg);border:2px solid var(--ink);border-bottom:0}
 .scene--park{flex:none;height:auto;min-height:0;aspect-ratio:100/122;width:min(calc(100% - 40px),calc((100dvh - 190px)*.818));margin:12px auto 0}
 @media (min-width:600px) and (hover:hover) and (pointer:fine){ .scene--park{width:min(calc(100% - 40px),calc((var(--ph) - 230px)*.818))} }
 #parkPage .scene--park{margin-top:auto}   /* 공원 그림을 화면 가운데쯤으로 */
-#parkPage .park__sub{margin-bottom:auto}
 /* ── 도트 ── */
 .px{image-rendering:pixelated;image-rendering:crisp-edges;display:block;width:100%;height:auto;-webkit-user-drag:none;user-select:none}
 .av--crop{position:relative;display:block;width:100%;overflow:hidden}
@@ -382,5 +380,9 @@ dialog{background:var(--bg);border:2px solid var(--ink);border-bottom:0}
 .vn__opt::before{content:'▶ '}
 .vn__opt:active{transform:translate(1px,1px)}
 .msg__go{display:block;margin-top:6px;min-height:32px;padding:0 10px;border:2px solid #3B2A20;border-radius:4px;background:#FFF3C4;font-size:13px;font-weight:600;color:#3B2A20}
-#parkPage .park__sub{margin-bottom:0}
 #parkPage .vn{margin-bottom:auto}   /* 그림 + 대화창을 한 덩어리로 가운데 */
+/* 그네 타기: 캐릭터만 흔들림 (그네 판은 그림) */
+.actor--swing .char{animation:swing 2.2s ease-in-out infinite;transform-origin:50% -30%}
+.actor--high .char{animation-duration:1.6s;--sw:9deg}
+@keyframes swing{0%,100%{transform:rotate(calc(-1 * var(--sw, 5deg)))}50%{transform:rotate(var(--sw, 5deg))}}
+@media (prefers-reduced-motion:reduce){.actor--swing .char{animation:none}}

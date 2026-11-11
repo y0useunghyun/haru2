@@ -195,10 +195,10 @@ const NOW_TEXT = {window:'창밖 구경 중', wander:'방을 돌아다니는 중
   music:'음악 듣는 중', collect:'보물 모으는 중', stretch:'몸 푸는 중', walk:'공원 산책 중'};
 // 공원에서 하는 일. 계절 이름은 {s} 자리에 들어감
 const PARK = {
-  casual:{walk:['{s} 공원 냄새 좋다!','한 바퀴 더 돌자!'], bench:['벤치에 앉아서 쉬자','여기 앉으면 다 보여!'], leaf:['이거 주웠어! 예쁘지?','오늘의 보물 발견!'], sky:['구름 모양 봐!','하늘 진짜 넓다'], friend:'{n}도 나와 있네!'},
-  polite:{walk:['{s} 공원이 좋네요','천천히 걸어요'], bench:['벤치에 잠깐 앉아요','바람이 시원해요'], leaf:['예쁜 걸 하나 주웠어요','이건 방에 둘까요?'], sky:['구름이 천천히 가요','하늘이 맑아요'], friend:'{n}도 나와 있어요'},
+  casual:{walk:['{s} 공원 냄새 좋다!','한 바퀴 더 돌자!'], bench:['벤치에 앉아서 쉬자','여기 앉으면 다 보여!'], leaf:['어? 저기 뭐 있다!','이거 봐 봐!'], sky:['구름 모양 봐!','하늘 진짜 넓다'], swing:['높이높이!','바람 가르는 거 좋아!'], friend:'{n}도 나와 있네!'},
+  polite:{walk:['{s} 공원이 좋네요','천천히 걸어요'], bench:['벤치에 잠깐 앉아요','바람이 시원해요'], leaf:['어, 저기 뭔가 있어요','이것 좀 봐요'], sky:['구름이 천천히 가요','하늘이 맑아요'], swing:['조금씩 높아져요','바람이 시원해요'], friend:'{n}도 나와 있어요'},
 };
-const PARK_SPOTS = {walk:{x:36, y:92}, bench:{x:64, y:72}, leaf:{x:30, y:73}, sky:{x:47, y:66}};   // 발 위치 (%), 공원 100×122칸 기준
+const PARK_SPOTS = {walk:{x:36, y:92}, bench:{x:60, y:72}, leaf:{x:30, y:73}, sky:{x:43, y:66}, swing:{x:88, y:75}};   // 발 위치 (%), 공원 100×122칸 기준
 const SHOP_LINE = {casual:'이거 우리 방에 두자!', polite:'방에 잘 어울릴 것 같아요'};
 const VISIT_LINE = {casual:['우와, 여기 좋다!','이 방 따뜻하다'], polite:['방이 참 아늑해요','여기 오니까 좋네요']};
 const GIFT_LINE = {casual:n => `${n}한테서 선물이 왔어!`, polite:n => `${n}에게서 선물이 왔어요`};
@@ -215,7 +215,7 @@ const NEWS = {
 // ── 캐릭터끼리 만남 (A: 마을의 핵심) ──
 // {r} = 상대 이름 + 이랑/랑. pair = 공원에서 둘이 서는 자리 (%, 장면 기준). place 가 town 이면 거리에서 보임
 const MEET_EVENTS = [
-  {id:'bench',  place:'park', pair:[{x:57, y:72}, {x:71, y:72}],
+  {id:'bench',  place:'park', pair:[{x:53, y:72}, {x:67, y:72}],
     past:{casual:'{r} 벤치에 같이 앉아 있었어', polite:'{r} 벤치에 같이 앉아 있었어요'}, now:{casual:'{r} 벤치에 앉아 있어!', polite:'{r} 벤치에 앉아 있어요'}, feed:'공원 벤치에 같이 앉아 있었어요'},
   {id:'treasure', place:'park', pair:[{x:28, y:73}, {x:40, y:76}],
     past:{casual:'{r} 나무 밑에서 보물찾기 했어', polite:'{r} 나무 밑에서 보물찾기 했어요'}, now:{casual:'{r} 보물찾기 중이야!', polite:'{r} 보물찾기 하고 있어요'}, feed:'나무 밑에서 보물찾기를 했어요'},
