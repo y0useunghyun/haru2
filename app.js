@@ -352,7 +352,6 @@ function drawRec(){
 }
 // 시트가 방을 가리므로 대답은 닫을 때 한다
 let recBefore = EMPTY_DAY, ateLine = null, reactionTimers = [];
-$('reviewBtn').onclick = () => $('calBtn').click();   // 오늘 기록 돌아보기 = 달력의 오늘 (고치기 버튼 있음)
 function openRec(){ recBefore = todayRec(); ateLine = null; drawRec(); $('rec').returnValue = ''; $('rec').showModal(); }
 function reactionsAfterRecord(before, after, personality){
   const A = AFTER_RECORD[personality], list = [];

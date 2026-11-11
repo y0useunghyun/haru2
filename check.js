@@ -127,4 +127,6 @@ const H = t => run(`hits(${JSON.stringify(t)})`);
 eq(H('마라탕'), ['마라탕']); eq(H('마라샹궈'), ['마라샹궈']); eq(H('소고기무국'), ['소고기', '국']);
 eq(H('밥을'), ['밥']); eq(H('김치국'), ['김치', '국']);
 eq(H('어떡해'), []); eq(H('면접'), []); eq(H('콩이랑'), []);
+// 기록에 대한 대답은 묻는 말이 아님 (대답 뒤에 캐릭터가 다음 질문을 하므로 질문이 겹치면 안 됨)
+for (const P_ of Object.values(T.LINES)) for (const t of [...Object.values(P_.mood).flat(), ...P_.ate]) assert.ok(!/\?\s*$/.test(t), t);
 console.log('check.js ok');
