@@ -20,11 +20,12 @@ function chatPush(me, t, go = null){   // go = 'park' 이면 메시지 안에 �
 function chatAsk(){
   const q = askNow();
   openAsk = q?.kind ?? null;
+  if (!q && typeof proposePlay === 'function') proposePlay();   // 오늘 질문이 다 끝나면 놀이 제안 (play.js)
   if (!q || chat.at(-1)?.t === q.t) return drawChat();   // 바로 앞 줄이 같은 질문이면 다시 묻지 않음 (되돌린 뒤 등)
   chatPush(false, q.t);
 }
 function drawChat(){
-  const log = $('chatLog'), html = chat.map(m => `<p class="msg ${m.me ? 'msg--me' : ''}">${esc(m.t)}${m.go === 'park' ? '<button type="button" class="msg__go" data-go="park">공원 가기 ›</button>' : ''}</p>${undo?.id === m.id ? '<button type="button" class="msg__undo" data-undo>되돌리기</button>' : ''}`).join('');
+  const log = $('chatLog'), html = chat.map(m => `<p class="msg ${m.me ? 'msg--me' : ''}">${esc(m.t)}${m.go === 'park' ? '<button type="button" class="msg__go" data-go="park">공원 가기 ›</button>' : ''}${m.go?.startsWith('play:') && typeof playButtons === 'function' ? playButtons(m) : ''}</p>${undo?.id === m.id ? '<button type="button" class="msg__undo" data-undo>되돌리기</button>' : ''}`).join('');
   if (log.innerHTML !== html){ log.innerHTML = html; log.scrollTop = log.scrollHeight; }
   const still = openAsk && askNow()?.kind === openAsk;
   $('sayInput').placeholder = still ? HINT[openAsk] : `${state.name || '캐릭터'}에게 말해 주기…`;

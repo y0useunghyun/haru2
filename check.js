@@ -161,4 +161,5 @@ const V = n => ({visits:Array.from({length:n}, (_, i) => L.addDays('2026-01-01',
 eq([0, 4, 5, 14, 15, 40, 80, 200].map(n => RW.levelOf(V(n))), [0, 0, 1, 1, 2, 3, 4, 4]);
 assert.ok(RW.lookOwned({looks:[]}, 'hair', 1) && !RW.lookOwned({looks:[]}, 'hair', 7) && RW.lookOwned({looks:['hair:7']}, 'hair', 7));
 for (const t of Object.values(run('SLEEP_ACK')).flatMap(Object.values)) assert.ok(t.includes('{h}') && !/\?\s*$/.test(t), t);
+for (const t of Object.values(run('PLAY_TALK')).flatMap(Object.values)) assert.ok(!/\?\s*$/.test(t), t);
 console.log('check.js ok');

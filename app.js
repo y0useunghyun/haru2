@@ -69,6 +69,7 @@ function normalize(raw){
     gotKinds:cleanList(raw.gotKinds, 20, k => (typeof k === 'string' && /^[a-z0-9]{1,12}$/.test(k) ? k : null)),
     looks:[...new Set([...cleanList(raw.looks, 20, x => (typeof x === 'string' && /^(hair|hairColor|outfit|shirt):\d$/.test(x) ? x : null)), ...worn])],
     levelSeen:Number.isInteger(raw.levelSeen) ? raw.levelSeen : -1,
+    playDay:isDateKey(raw.playDay) ? raw.playDay : null,   // 오늘 놀이 했는지 (play.js)
     savedAt:typeof raw.savedAt === 'string' && !isNaN(Date.parse(raw.savedAt)) ? raw.savedAt : null,   // 서버와 비교용 (cloud.js)
     cloudUid:typeof raw.cloudUid === 'string' && /^[0-9a-f-]{36}$/.test(raw.cloudUid) ? raw.cloudUid : null,
     days,

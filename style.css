@@ -438,3 +438,8 @@ dialog{background:var(--bg);border:2px solid var(--ink);border-bottom:0}
 .level .sub{display:flex;align-items:center;gap:6px;margin:0}
 .pcard__img .swatch{display:block;width:40px;height:40px;margin:8px auto}
 @media (max-width:360px){ .hd .deco{padding:0 8px;font-size:12px} .hd__r{gap:5px} }   /* 좁은 폰에서 「방 꾸미기」까지 한 줄 */
+/* 놀이 (play.js): 대화창 메시지 안 고르기 */
+.play{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.play__opt{min-height:34px;padding:0 10px;border:2px solid #3B2A20;border-radius:4px;background:#FFF3C4;font-size:13px;font-weight:600;color:#3B2A20;touch-action:none;user-select:none;-webkit-user-select:none}
+.play__later{background:#fff;font-weight:500}
+.play__hold:active{background:#FFD23F;transform:translate(1px,1px)}
