@@ -42,7 +42,7 @@ if (location.protocol === 'https:') (function(c,l,a,r,i,t,y){
       <input class="field say__in" id="sayInput" maxlength="120" enterkeyhint="send" placeholder="말해 주기…" aria-label="캐릭터에게 오늘 한 일 말하기">
       <button class="say__go" aria-label="남기기">↑</button>
     </form>
-    <div class="panel__top panel__today"><span id="todayLine"></span><button class="panel__more" id="recBtn">잠·운동·식사 ›</button></div>
+    <button type="button" class="panel__today" id="recBtn" aria-label="오늘 기록 자세히 보고 고치기"><span id="todayLine"></span><b aria-hidden="true">›</b></button>
   </section>
 </main>
 <div class="toast" id="toast" role="status" hidden><span id="toastText"></span><button type="button" class="toast__undo" id="toastUndo" hidden>되돌리기</button></div>

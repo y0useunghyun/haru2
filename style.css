@@ -353,8 +353,9 @@ dialog{background:var(--bg);border:2px solid var(--ink);border-bottom:0}
 .is-lying .av{animation:none}
 
 /* 홈: 기록 칸은 방 바로 아래 (말풍선 질문과 이어지게) */
-.panel__today{margin:2px 0 0;font-size:13px;color:var(--text-2)}
-.panel__today .panel__more{flex:none;white-space:nowrap;min-height:36px}
+.panel__today{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-height:40px;margin-top:2px;font-size:13px;color:var(--text-2);text-align:left}
+.panel__today b{flex:none;font-size:16px;font-weight:600;color:var(--ink)}
 .panel__today span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* 나가 있을 땐 말풍선이 쪽지 위에 */
 .actor[hidden] ~ .bubble{top:calc(78cqh - 3cqw)}
+.cal-edit{margin-top:12px;width:100%}

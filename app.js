@@ -381,6 +381,7 @@ function playReaction(r){
 $('rec').onclose = () => {
   reactAfter(recBefore, todayRec(), ateLine ? [{t:ateLine}] : []);
   ateLine = null;
+  if ($('calPage').open) drawCal();   // 달력에서 열었으면 바로 반영
 };
 $('rec').addEventListener('click', e => {
   const sq = e.target.closest('[data-sq]');
@@ -561,18 +562,20 @@ function dayDetail(key){
   const title = `<p class="sec">${mo}월 ${da}일 ${WEEK[new Date(y, mo - 1, da).getDay()]}요일</p>`;
   const met = key >= state.born;
   const life = met ? `<p class="life">${esc(state.name)}: ${pastLines()[activityFor(state, key, 14)]}</p>` : '';
-  if (!hasRecord(d)) return title + life + (key === TODAY ? '<p class="sub">오늘은 어떤 하루였어요?</p>' : '');
+  const edit = key === TODAY ? `<button type="button" class="chip cal-edit" data-edit>${hasRecord(d) ? '오늘 기록 고치기' : '오늘 기록 남기기'}</button>` : '';
+  if (!hasRecord(d)) return title + life + edit;
   const row = (k, v) => `<div class="row"><div class="row__h"><span>${k}</span><span class="num">${v}</span></div></div>`;
   return title + life
-    + (d.mood ? row('그날', MOODS.find(([k]) => k === d.mood)[1]) : '')
+    + (d.mood ? row('기분', MOODS.find(([k]) => k === d.mood)[1]) : '')
     + (d.rest ? row('그날', '아무것도 안 한 날') : '')
     + (d.sleep != null ? row('수면', d.sleep + '시간') : '')
     + (d.moves.length ? row('운동', d.moves.map(m => `${m.type} ${m.min}분`).join(' · ')) : '')
-    + [...d.meals].sort(byMealOrder).map(m => row(esc(m.name), m.when)).join('');
+    + [...d.meals].sort(byMealOrder).map(m => row(esc(m.name), m.when)).join('') + edit;
 }
 $('calBtn').onclick = () => { calSel = TODAY; calMonth = new Date(dayNow().getFullYear(), dayNow().getMonth(), 1); drawCal(); $('calPage').showModal(); };
 $('calBody').onclick = e => {
   const nav = e.target.closest('[data-cm]'); if (nav){ calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() + +nav.dataset.cm, 1); calSel = null; drawCal(); return; }
+  if (e.target.closest('[data-edit]')){ $('recBtn').click(); return; }
   const day = e.target.closest('[data-day]'); if (day){ calSel = calSel === day.dataset.day ? null : day.dataset.day; drawCal(); }
 };
 
