@@ -375,12 +375,14 @@ dialog{background:var(--bg);border:2px solid var(--ink);border-bottom:0}
 @media (min-width:600px) and (hover:hover) and (pointer:fine){ .scene--park{width:min(calc(100% - 40px),calc((var(--ph) - 370px)*.82))} }
 .vn{margin:12px 20px 0;padding:12px 14px;border:2px solid #3B2A20;border-radius:4px;background:#fff;box-shadow:3px 3px 0 #3B2A20}
 .vn__t{margin:0;font-size:15px;line-height:1.5;color:#3B2A20}
-.vn__opts{display:flex;flex-direction:column;gap:8px;margin-top:12px}
-.vn__opt{min-height:44px;padding:0 14px;border:2px solid #3B2A20;border-radius:4px;background:#FFF3C4;color:#3B2A20;font-size:15px;font-weight:600;text-align:left}
+.vn__opts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.vn__opt:last-child:nth-child(odd){grid-column:1 / -1}   /* 홀수면 마지막은 한 줄 전체 */
+.vn__opt{min-height:44px;padding:6px 10px;line-height:1.3;border:2px solid #3B2A20;border-radius:4px;background:#FFF3C4;color:#3B2A20;font-size:15px;font-weight:600;text-align:left}
 .vn__opt::before{content:'▶ '}
 .vn__opt:active{transform:translate(1px,1px)}
 .msg__go{display:block;margin-top:6px;min-height:32px;padding:0 10px;border:2px solid #3B2A20;border-radius:4px;background:#FFF3C4;font-size:13px;font-weight:600;color:#3B2A20}
-#parkPage .vn{margin-bottom:auto}   /* 그림 + 대화창을 한 덩어리로 가운데 */
+#parkPage .scene--park{margin-top:12px}   /* 그림은 위에 고정, 대화창은 아래로만 늘어남 (고르기 수가 바뀌어도 그림이 안 움직이게) */
+#parkPage .vn{margin-bottom:auto}
 /* 그네 타기: 캐릭터만 흔들림 (그네 판은 그림) */
 .actor--swing .char{animation:swing 2.2s ease-in-out infinite;transform-origin:50% -30%}
 .actor--high .char{animation-duration:1.6s;--sw:9deg}
