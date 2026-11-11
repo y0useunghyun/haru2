@@ -9,6 +9,14 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri@2.40.3/dist/galmuri.css">
 <link rel="stylesheet" href="style.css">
+<!-- Microsoft Clarity (방문 기록). 배포 주소(https)에서만, 파일로 열거나 로컬에선 안 켬. 입력칸·기록 시트는 data-clarity-mask 로 가림 -->
+<script>
+if (location.protocol === 'https:') (function(c,l,a,r,i,t,y){
+  c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+  t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+  y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+})(window, document, "clarity", "script", "zbpv1p63rj");
+</script>
 </head>
 <body>
 <main class="app">
@@ -30,7 +38,7 @@
   <section class="panel" aria-labelledby="moodTitle">
     <div class="panel__top"><p class="panel__q" id="moodTitle">오늘 어땠어요?</p><button class="panel__more" id="recBtn">잠·운동·식사 ›</button></div>
     <div class="moods" id="moods"></div>
-    <form class="say" id="sayForm" autocomplete="off">
+    <form class="say" id="sayForm" autocomplete="off" data-clarity-mask="true">
       <input class="field say__in" id="sayInput" maxlength="120" enterkeyhint="send" placeholder="예: 점심에 김밥, 30분 걸었어" aria-label="오늘 한 일 적기">
       <button class="say__go" aria-label="남기기">↑</button>
     </form>
@@ -48,7 +56,7 @@
   <button class="primary" value="ok">같이 들어가기</button>
 </form></dialog>
 
-<dialog id="rec"><form class="sheet" method="dialog">
+<dialog id="rec" data-clarity-mask="true"><form class="sheet" method="dialog">
   <h2>오늘 남기기</h2>
   <p class="sec" style="margin-top:0">잠</p>
   <div class="chips" id="recSleep"></div>
