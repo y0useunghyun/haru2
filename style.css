@@ -286,8 +286,6 @@ dialog{background:var(--bg);border:2px solid var(--ink);border-bottom:0}
 .gift-grid{max-height:34dvh;overflow-y:auto;scrollbar-width:none;margin-top:12px;padding:2px 4px 4px 2px}
 .code-box{height:auto;padding:12px 14px;font-size:13px;line-height:1.5;word-break:break-all;resize:none;margin-bottom:4px}
 /* 토스트는 위에: 아래 입력칸·버튼을 가리지 않게 */
-.toast{bottom:auto;top:max(64px,calc(env(safe-area-inset-top) + 56px))}
-@media (min-width:600px) and (hover:hover) and (pointer:fine){ .toast{bottom:auto;top:calc((100dvh - var(--ph))/2 + 64px)} }
 
 /* 마을·공원 그림: 비율 고정 (캐릭터 자리가 그림과 맞게) */
 .art-svg{position:absolute;inset:0;width:100%;height:100%;display:block}
@@ -444,3 +442,6 @@ dialog{background:var(--bg);border:2px solid var(--ink);border-bottom:0}
 .play__later{background:#fff;font-weight:500}
 .play__hold:active{background:#FFD23F;transform:translate(1px,1px)}
 .code-box--short{height:auto;min-height:0;padding:14px;font-size:28px;font-weight:700;letter-spacing:.12em;text-align:center;resize:none}
+/* 안내(토스트): 아래쪽, 대화창 말풍선과 같은 도트 상자 (위에 뜨던 것 정리) */
+.toast{top:auto;bottom:max(96px,calc(env(safe-area-inset-bottom) + 88px));padding:10px 14px;border:2px solid #3B2A20;border-radius:4px;box-shadow:2px 2px 0 rgba(59,42,32,.35);font-size:14px;color:#3B2A20}
+dialog .toast{position:absolute;bottom:24px}   /* 열린 창 안에서는 그 창의 아래쪽 */

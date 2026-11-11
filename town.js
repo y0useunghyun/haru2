@@ -154,12 +154,13 @@ function drawBoard(){
 // ── 친구 방 ──
 let friendSel = null;
 const GUEST = {x:38, y:97}, GUEST_RIGHT = {x:80, y:97};   // 놀러 간 내 캐릭터 자리
+let friendReply = null, friendReplyTimer = null;   // 인사 보낸 뒤 친구 캐릭터 대답 (잠깐)
 function drawFriend(){
   const f = state.friends.find(x => x.room.seed === friendSel); if (!f) return;
   const r = f.room, act = friendNow(f), info = ACTIVITIES[act], spot = info.spot ? SPOTS[info.spot === 'wander' && tick % 2 ? 'wander2' : info.spot] : null;
   const FL = LINES[r.personality], mine = talk % 2 === 1;
   const last = recentMeets(3).find(x => x.f === f);   // 친구 입장에서: 「(내 이름)이랑 ~했어」
-  const line = !spot ? `${josa(r.name, '은는')} 공원에 산책 갔어요`
+  const line = friendReply && spot ? friendReply : !spot ? `${josa(r.name, '은는')} 공원에 산책 갔어요`
     : mine ? pick(VISIT_LINE[register()]) : talk % 4 === 0 ? pick(FL.hello[timeOf(hourNow())])
     : last && talk % 4 === 2 ? fill((last.date === TODAY ? last.ev.now : last.ev.past)[PERSONALITIES[r.personality].register], {r:withRang(state.name)}) : pick(FL.doing[act]);
   const guest = !spot || (spot.x < 55 && spot.y > 80) ? GUEST_RIGHT : GUEST;   // 친구가 앞쪽 가운데거나 쪽지가 있으면 비켜 선다
@@ -170,6 +171,12 @@ function drawFriend(){
       : `<span class="note" style="pointer-events:none">${NOTE}</span>`}
     <div class="actor actor--static" style="--x:${guest.x};--y:${guest.y}"><div class="char">${avatar(state.look, {shadow:false})}</div></div>
     <button type="button" class="bubble bubble--static" id="friendBubble" style="--x:${at.x};--y:${at.y}">${esc(line)}</button>`;
+}
+function friendThanks(f, gift){   // 친구 방이면 친구가 말풍선으로, 아니면 안내
+  if (!$('friendPage').open) return showToast(`${f.room.name}에게 보냈어요`);
+  friendReply = FRIEND_THANKS[PERSONALITIES[f.room.personality].register][gift ? 'gift' : 'greet'];
+  drawFriend(); clearTimeout(friendReplyTimer);
+  friendReplyTimer = setTimeout(() => { friendReply = null; if ($('friendPage').open) drawFriend(); }, 4000);
 }
 function openFriend(seed){ friendSel = seed; talk = talk - talk % 4; drawFriend(); if (!$('friendPage').open) $('friendPage').showModal(); }
 $('friendScene').onclick = e => { if (e.target.closest('#friendBubble')){ talk++; drawFriend(); } };
@@ -198,7 +205,8 @@ $('greetSheet').onclick = e => {
   const code = toCode('gift', {f:state.name, s:state.seed, t:f.room.seed, g:greetDraft.g, it:greetDraft.it, d:TODAY, r:Math.floor(Math.random()*1e6)});
   $('greetSheet').close();
   if (f.uid && typeof sendMail === 'function'){   // 서버 친구면 바로 전달, 안 되면 코드로
-    sendMail(f.uid, code).then(ok => ok ? showToast(`${f.room.name}에게 보냈어요`) : openCode(`${f.room.name}에게 보낼 인사`, code, '친구가 링크를 열거나 「받은 코드 넣기」에 붙여 넣으면 전해져요'));
+    const gift = !!greetDraft.it;
+    sendMail(f.uid, code).then(ok => ok ? friendThanks(f, gift) : openCode(`${f.room.name}에게 보낼 인사`, code, '친구가 링크를 열거나 「받은 코드 넣기」에 붙여 넣으면 전해져요'));
     return;
   }
   openCode(`${f.room.name}에게 보낼 인사`, code, '친구가 링크를 열거나 「받은 코드 넣기」에 붙여 넣으면 전해져요. 선물은 내 방에서도 그대로 있어요');
