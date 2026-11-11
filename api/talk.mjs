@@ -26,8 +26,22 @@ const Answer = z.object({
 
 const ASK_TEXT = { mood: "지금 기분", sleep: "어젯밤 잠", meal: "식사", move: "오늘 운동" };
 
+// 말투 예시 (짧게, 물음표 없이, 자기를 이름으로 안 부름)
+const EXAMPLES = {
+  casual:'예) 사용자: 오늘 시험 망쳤어 → 대답: 아이고, 많이 속상했겠다. 오늘은 나랑 좀 쉬자.\n예) 사용자: 떡볶이 먹었어 → 대답: 떡볶이 좋지! 나도 한 입 먹고 싶다.',
+  polite:'예) 사용자: 오늘 시험 망쳤어 → 대답: 많이 속상했겠어요. 오늘은 저랑 천천히 쉬어요.\n예) 사용자: 떡볶이 먹었어 → 대답: 떡볶이 맛있었겠어요. 저도 한 입 먹고 싶어요.',
+};
+// 끝 문장이 질문이면 잘라냄 (대답 뒤에 앱이 다음 질문을 하므로). 한 문장은 남김
+function noQuestion(text){
+  const parts = text.trim().split(/(?<=[.!?~…])\s+/);
+  while (parts.length > 1 && /(\?|나요|까요|니|어\?)$/.test(parts.at(-1).replace(/[.!~…\s]+$/, ''))) parts.pop();
+  return parts.join(' ').replace(/\?+$/, '.');
+}
+
 function systemPrompt({ name, personality, register, ask }){
-  return `너는 기록 앱 「하루」의 작은 방에 사는 캐릭터 「${name}」이다. 성격: ${personality}.
+  return `[말투] ${register === "casual" ? "반말만 쓴다." : "존댓말(해요체)만 쓴다. 반말 금지."}
+
+너는 기록 앱 「하루」의 작은 방에 사는 캐릭터 「${name}」이다. 성격: ${personality}.
 ${register === "casual" ? "친구처럼 반말로 말한다." : "친구처럼 편한 해요체로 말한다. 사용자에게 '-시-' 높임(드셨어요, 가셨어요)은 쓰지 않는다 (먹었어요, 갔어요)."}
 자기를 이름이나 3인칭으로 부르지 않는다 (「콩이가」 X, 「저는/나는」 O). 사용자를 「사용자님」이라 부르지 않는다.
 사용자가 한 줄을 말하면, 캐릭터로서 짧게 대답하고 기록할 것이 있으면 뽑는다.
@@ -44,7 +58,9 @@ ${register === "casual" ? "친구처럼 반말로 말한다." : "친구처럼 �
 - meals: 먹은 음식 이름 (먹었다고 한 것만, 먹고 싶다는 X).
 - moves: 한 운동. type 은 ${MOVE_TYPES.join("·")} 중 하나, min 은 분 (모르면 30).
 - skip: 지금 물어본 것(${ask ? ASK_TEXT[ask] : "없음"})에 「안 했다/모르겠다/말하기 싫다」처럼 답했으면 true.
-${ask ? `지금 앱이 물어본 것: ${ASK_TEXT[ask]}.` : ""}`;
+${ask ? `지금 앱이 물어본 것: ${ASK_TEXT[ask]}.` : ""}
+
+${EXAMPLES[register]}`;
 }
 
 const ALLOWED = [/^https:\/\/(my-haru2|haru2)\.vercel\.app$/, /^https:\/\/y0useunghyun\.github\.io$/, /^null$/];   // null = 파일로 열었을 때
@@ -94,14 +110,13 @@ export default async function handler(req, res){
     const response = await client.messages.parse({
       model:"claude-haiku-5-5",
       max_tokens:1024,
-      thinking:{ type:"disabled" },   // 짧은 대답이라 생각 단계 없이 (Haiku 5.5 는 effort high 이하에서 끌 수 있음) → 더 빠르고 싸게
       output_config:{ effort:"low", format:zodOutputFormat(Answer) },
       system:systemPrompt(ctx),
-      messages:[{ role:"user", content:`${recent ? `최근 대화:\n${recent}\n\n` : ""}사용자가 방금 한 말: ${text}` }],
+      messages:[{ role:"user", content:`${recent ? `최근 대화:\n${recent}\n\n` : ""}사용자가 방금 한 말: ${text}\n(${ctx.register === "casual" ? "반말" : "해요체"}로, 물음표 없이)` }],
     });
     if (response.stop_reason === "refusal" || !response.parsed_output) return res.status(200).json({ fallback:true });
     const usage = { input:response.usage.input_tokens, output:response.usage.output_tokens };   // 요금 확인용
-    return res.status(200).json({ ...response.parsed_output, usage });
+    return res.status(200).json({ ...response.parsed_output, reply:noQuestion(response.parsed_output.reply), usage });
   } catch (err){
     console.error("AI 대답 실패", err);
     return res.status(200).json({ fallback:true });   // 앱은 단어 표 대답으로
