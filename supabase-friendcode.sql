@@ -11,7 +11,8 @@ create or replace function public.add_friend_code(code text) returns uuid
 language plpgsql security definer set search_path = public as $$
 declare friend uuid;
 begin
-  select user_id into friend from public.rooms where short_code = upper(replace(trim(code), '-', ''));
+  -- 입력 이름 code 가 rooms.code 칸과 겹쳐서 함수 이름으로 가리킴
+  select r.user_id into friend from public.rooms r where r.short_code = upper(replace(trim(add_friend_code.code), '-', ''));
   if auth.uid() is null or friend is null or friend = auth.uid() then return null; end if;
   insert into public.friendships (user_id, friend_id) values (auth.uid(), friend), (friend, auth.uid()) on conflict do nothing;
   return friend;
