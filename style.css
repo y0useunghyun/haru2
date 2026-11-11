@@ -147,10 +147,10 @@ dialog{background:var(--bg);border:2px solid var(--ink);border-bottom:0}
 @media (min-width:600px) and (hover:hover) and (pointer:fine){   /* 마우스 쓰는 컴퓨터에서만 폰 프레임. 아이폰 가로·아이패드는 전체 화면 */
   :root{--pw:393px;--ph:min(852px,calc(100dvh - 48px));--py:calc((100dvh - var(--ph))/2)}
   body{background:#FFC93C;min-height:100dvh;display:grid;place-items:center}
-  .app{width:var(--pw);height:var(--ph);min-height:0;padding-top:52px;border-radius:48px;overflow-y:auto;scrollbar-width:none;box-shadow:0 0 0 10px var(--ink),12px 12px 0 10px rgba(30,27,24,.3)}
-  dialog{position:fixed;inset:auto auto var(--py) 50%;transform:translateX(-50%);margin:0;width:var(--pw);border-radius:24px 24px 48px 48px}
+  .app{width:var(--pw);height:var(--ph);min-height:0;padding-top:52px;border-radius:30px;overflow-y:auto;scrollbar-width:none;box-shadow:0 0 0 10px var(--ink),12px 12px 0 10px rgba(30,27,24,.3)}
+  dialog{position:fixed;inset:auto auto var(--py) 50%;transform:translateX(-50%);margin:0;width:var(--pw);border-radius:24px 24px 30px 30px}
   dialog::backdrop{background:rgba(25,26,24,.2)}
-  .edit{top:var(--py);bottom:auto;height:var(--ph);border-radius:48px}
+  .edit{top:var(--py);bottom:auto;height:var(--ph);border-radius:30px}
   .edit__top,.page__top{padding-top:52px}
 }
 
@@ -410,3 +410,5 @@ dialog{background:var(--bg);border:2px solid var(--ink);border-bottom:0}
 .vn__t:focus{outline:none}   /* 화면이 바뀌면 문장부터 읽히게 포커스만 줌 */
 .vn__opt[aria-pressed]::before{content:none}   /* 고르기(성격)는 ▶ 없이, 행동만 ▶ */
 .msg__undo{align-self:flex-end;margin:-2px 2px 0;min-height:28px;font-size:12px;color:var(--text-2);text-decoration:underline;text-underline-offset:3px}
+.chip--write{border-style:dashed}   /* 고르는 칩과 달리 직접 적는 칸으로 들어감 (피드백: 「자세히」가 애매) */
+.cal-sub{margin:16px 0 0;font-size:13px;font-weight:600;color:var(--text-2)}

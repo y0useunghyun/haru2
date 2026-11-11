@@ -359,7 +359,7 @@ $('sayForm').onsubmit = async e => {
   render();
 };
 
-// ── 기록 시트 (2단계). 칩으로 고르고, 자세히는 3단계로 ──
+// ── 기록 시트 (2단계). 칩으로 고르고, ✎ 직접 적기는 3단계로 ──
 const REACTION_GAP_MS = 3600;
 const SLEEP_QUICK = [['적게', 5], ['보통', 7], ['푹', 9]];
 const MOVE_QUICK = [['가볍게', {type:'걷기', min:20}], ['땀 흘렸어요', {type:'달리기', min:40}]];
@@ -367,11 +367,11 @@ function drawRec(){
   const d = todayRec();
   const quick = SLEEP_QUICK.some(([, v]) => v === d.sleep);
   $('recSleep').innerHTML = SLEEP_QUICK.map(([label, v]) => `<button type="button" class="chip" data-sq="${v}" aria-pressed="${d.sleep === v}">${label}</button>`).join('')
-    + `<button type="button" class="chip" data-open="sleep" aria-pressed="${d.sleep != null && !quick}">${d.sleep != null && !quick ? d.sleep + '시간' : '자세히'}</button>`;
+    + `<button type="button" class="chip chip--write" data-open="sleep" aria-pressed="${d.sleep != null && !quick}">${d.sleep != null && !quick ? d.sleep + '시간' : '✎ 직접 적기'}</button>`;
   const single = d.moves.length === 1 ? d.moves[0] : null;
   $('recMove').innerHTML = MOVE_QUICK.map(([label, m], i) => `<button type="button" class="chip" data-mq="${i}" aria-pressed="${single?.type === m.type && single?.min === m.min}">${label}</button>`).join('')
-    + `<button type="button" class="chip" data-page="movePage">${d.moves.length ? moveMinOf(d.moves) + '분 · 자세히' : '자세히'}</button>`;
-  $('recMeal').innerHTML = `<button type="button" class="chip" data-newmeal>먹은 거 적기</button><button type="button" class="chip" data-page="nutriPage">${d.meals.length ? d.meals.length + '번 · 영양 보기' : '영양 보기'}</button>`;
+    + `<button type="button" class="chip chip--write" data-page="movePage">${d.moves.length ? moveMinOf(d.moves) + '분 · ✎ 고치기' : '✎ 직접 적기'}</button>`;
+  $('recMeal').innerHTML = `<button type="button" class="chip chip--write" data-newmeal>✎ 먹은 거 적기</button><button type="button" class="chip" data-page="nutriPage">${d.meals.length ? d.meals.length + '번 · 영양 보기' : '영양 보기'}</button>`;
   $('recRest').setAttribute('aria-pressed', d.rest);
 }
 // 시트가 방을 가리므로 대답은 닫을 때 한다
@@ -584,11 +584,13 @@ function dayDetail(key){
   const d = state.days[key], [y, mo, da] = key.split('-').map(Number);
   const title = `<p class="sec">${mo}월 ${da}일 ${WEEK[new Date(y, mo - 1, da).getDay()]}요일</p>`;
   const met = key >= state.born;
-  const life = met ? `<p class="life">${esc(state.name)}: ${pastLines()[activityFor(state, key, 14)]}</p>` : '';
-  const edit = key === TODAY ? `<button type="button" class="chip cal-edit" data-edit>${hasRecord(d) ? '오늘 기록 고치기' : '오늘 기록 남기기'}</button>` : '';
-  if (!hasRecord(d)) return title + life + edit;
+  // 캐릭터 이야기와 내 기록을 나눠 보여줌 (피드백: 「오늘 기록 고치기」가 캐릭터 일기를 고치는 걸로 읽힘)
+  const life = met ? `<p class="cal-sub">${esc(state.name)}의 하루</p><p class="life">${pastLines()[activityFor(state, key, 14)]}</p>` : '';
+  const mine = '<p class="cal-sub">내 기록</p>';
+  const edit = key === TODAY ? '<button type="button" class="chip chip--write cal-edit" data-edit>✎ 내 기록 적기</button>' : '';
+  if (!hasRecord(d)) return title + life + (key === TODAY ? mine + edit : '');
   const row = (k, v) => `<div class="row"><div class="row__h"><span>${k}</span><span class="num">${v}</span></div></div>`;
-  return title + life
+  return title + life + mine
     + (d.mood ? row('기분', MOODS.find(([k]) => k === d.mood)[1]) : '')
     + (d.rest ? row('그날', '아무것도 안 한 날') : '')
     + (d.sleep != null ? row('수면', d.sleep + '시간') : '')

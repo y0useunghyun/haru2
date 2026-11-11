@@ -21,7 +21,7 @@ const ACTIVITIES = {
   read:    {spot:'desk',   held:'book'},
   draw:    {spot:'desk',   held:'pencil'},
   plant:   {spot:'plant',  held:'can'},
-  music:   {spot:'center', held:'music'},
+  music:   {spot:'center', held:null},   // 손에 든 음표가 아이콘처럼 보여 뭔지 몰라서 뺌 (2026-11-11 피드백)
   collect: {spot:'center', held:'star'},
   stretch: {spot:'center', held:null},
   walk:    {spot:null,     held:null},
