@@ -37,8 +37,8 @@ function drawTown(){
     ${state.friends.length ? state.friends.map(f => `<button type="button" class="friend-row" data-friend="${f.room.seed}">
         <span class="friend-row__av thumb">${avatar(f.room.look, {crop:'face'})}</span>
         <span class="friend-row__t"><b>${esc(f.room.name)}</b><span class="sub">${metToday(f) ? '오늘 같이 놀았어요' : NOW_TEXT[friendNow(f)]}</span></span><span aria-hidden="true">›</span></button>`).join('')
-      : '<p class="sub">친구에게 내 방 초대 링크를 보내 보세요</p>'}
-    <div class="chips"><button type="button" class="chip" id="myCodeBtn">${typeof cloudUser !== 'undefined' && cloudUser && canLink() ? '내 방 초대 링크' : '내 방 코드 보내기'}</button><button type="button" class="chip" id="codeInBtn">받은 코드 넣기</button></div>`;
+      : '<p class="sub">친구에게 내 친구 코드를 보내 보세요</p>'}
+    <div class="chips"><button type="button" class="chip" id="myCodeBtn">${typeof cloudUser !== 'undefined' && cloudUser ? '내 친구 코드' : '내 방 코드 보내기'}</button><button type="button" class="chip" id="codeInBtn">받은 코드 넣기</button></div>`;
 }
 function goPlace(place){
   if (place === 'park') openPark();
@@ -49,7 +49,10 @@ $('townBtn').onclick = () => { drawTown(); $('townPage').showModal(); };
 $('townArt').onclick = e => { const g = e.target.closest('[data-place]'); if (g) goPlace(g.dataset.place); };
 $('townBody').onclick = e => {
   const fr = e.target.closest('[data-friend]'); if (fr) openFriend(+fr.dataset.friend);
-  if (e.target.closest('#myCodeBtn') && typeof inviteOpen === 'function' && inviteOpen()) return;   // 서버 친구 (friends.js)
+  if (e.target.closest('#myCodeBtn') && typeof inviteOpen === 'function' && typeof cloudUser !== 'undefined' && cloudUser){   // 서버 친구: 6글자 코드 (friends.js), 안 되면 긴 코드
+    inviteOpen().then(ok => { if (!ok) openCode('내 방 코드', toCode('room', roomData(state, myKinds())), '친구가 이 링크를 열거나 코드를 넣으면 내 방에 놀러 와요'); });
+    return;
+  }
   if (e.target.closest('#myCodeBtn')) openCode('내 방 코드', toCode('room', roomData(state, myKinds())), '친구가 이 링크를 열거나 코드를 넣으면 내 방에 놀러 와요. 서로 코드를 넣으면 캐릭터끼리 마을에서 만나요');
   if (e.target.closest('#codeInBtn')){ $('codeInBox').value = ''; $('codeIn').returnValue = ''; $('codeIn').showModal(); }
 };
@@ -205,7 +208,7 @@ $('greetSheet').onclick = e => {
 const canLink = () => location.protocol.startsWith('http');
 const linkOf = code => canLink() ? `${location.origin}${location.pathname}?code=${code}` : code;
 function openCode(title, code, help){
-  $('codeTitle').textContent = title; $('codeHelp').textContent = help;
+  $('codeTitle').textContent = title; $('codeHelp').textContent = help; $('codeBox').dataset.link = ''; $('codeBox').classList.remove('code-box--short');
   $('codeBox').value = linkOf(code);
   $('codeShare').hidden = !navigator.share || !canLink();
   $('codeSheet').returnValue = ''; $('codeSheet').showModal();
@@ -215,12 +218,14 @@ $('codeCopy').onclick = async () => {
   catch (err){ console.warn('복사 실패', err); $('codeBox').select(); showToast('글자를 길게 눌러 복사해 주세요'); }
 };
 $('codeShare').onclick = async () => {
-  try { await navigator.share({title:'하루 2', text:`${state.name}에게서 온 하루 2 코드`, url:$('codeBox').value}); }
+  const v = $('codeBox').value, link = $('codeBox').dataset.link;   // 6글자 코드면 코드 + 링크를 같이
+  try { await navigator.share(link ? {title:'하루 2', text:`${state.name}의 하루 친구 코드: ${v}`, url:link} : {title:'하루 2', text:`${state.name}에게서 온 하루 2 코드`, url:v}); }
   catch (err){ if (err.name !== 'AbortError') { console.warn('공유 실패', err); showToast('공유하지 못했어요. 복사하기를 써 주세요'); } }
 };
 $('codeIn').onclose = () => { if ($('codeIn').returnValue === 'ok') takeCode($('codeInBox').value); };
 
 function takeCode(text){
+  if (typeof takeShortCode === 'function' && SHORT_RE.test(String(text).trim())) return takeShortCode(String(text).trim());   // 6글자 친구 코드 (friends.js)
   const r = readCode(text);
   if (!r) return showToast('코드를 읽지 못했어요. 받은 글자를 그대로 붙여 넣어 주세요');
   return r.type === 'room' ? takeRoom(text.match(CODE_RE)[0], r.data) : takeGift(r);

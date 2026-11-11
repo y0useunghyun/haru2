@@ -443,3 +443,4 @@ dialog{background:var(--bg);border:2px solid var(--ink);border-bottom:0}
 .play__opt{min-height:34px;padding:0 10px;border:2px solid #3B2A20;border-radius:4px;background:#FFF3C4;font-size:13px;font-weight:600;color:#3B2A20;touch-action:none;user-select:none;-webkit-user-select:none}
 .play__later{background:#fff;font-weight:500}
 .play__hold:active{background:#FFD23F;transform:translate(1px,1px)}
+.code-box--short{height:auto;min-height:0;padding:14px;font-size:28px;font-weight:700;letter-spacing:.12em;text-align:center;resize:none}
