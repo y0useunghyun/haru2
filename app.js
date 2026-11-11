@@ -39,6 +39,8 @@ function cleanMail(m){
 function normalize(raw){
   const days = Object.fromEntries(Object.entries(raw.days && typeof raw.days === 'object' ? raw.days : {}).filter(([k]) => isDateKey(k)).map(([k, d]) => [k, cleanDay(d)]));
   const got = [...new Set([...(Array.isArray(raw.got) ? raw.got.filter(k => ALL_ITEMS.includes(k)) : []), ...oldGot(raw, days)])];
+  const look = cleanLook(raw.look);
+  const worn = Object.entries(LOOK_LOCKED).filter(([k, is]) => is.includes(look[k])).map(([k]) => `${k}:${look[k]}`);   // 잠금 전부터 입던 건 그대로
   return {
     v:2,
     seed:Number.isInteger(raw.seed) ? raw.seed : Math.floor(Math.random()*1e9),
@@ -49,7 +51,7 @@ function normalize(raw){
     visitDays:Number.isInteger(raw.visitDays) && raw.visitDays > 0 ? raw.visitDays : 1,
     visits:[...new Set([...(Array.isArray(raw.visits) ? raw.visits.filter(k => typeof k === 'string' && isDateKey(k)) : []), isDateKey(raw.lastVisit) ? raw.lastVisit : TODAY])].sort(),   // 복귀율 계산용. 화면에는 안 보임
     met:raw.met === true,
-    look:cleanLook(raw.look),
+    look,
     goals:cleanGoals(raw.goals),
     hiddenProps:Array.isArray(raw.hiddenProps) ? raw.hiddenProps.filter(id => PROPS.some(p => p.id === id)) : [],
     propKinds:cleanKinds(raw.propKinds),
@@ -61,6 +63,12 @@ function normalize(raw){
     shopDay:isDateKey(raw.shopDay) ? raw.shopDay : null,
     picks:cleanList(raw.picks, 400, x => PICK_BY_ID[x?.id] && isDateKey(x.date) ? {id:x.id, date:x.date} : null),   // 공원에서 주운 것 → 책상 위 병
     parkDay:isDateKey(raw.parkDay) ? raw.parkDay : null,   // 오늘 공원에서 골랐는지
+    coins:Number.isInteger(raw.coins) && raw.coins >= 0 ? Math.min(raw.coins, 99999) : 0,   // 꾸준함 보상 (reward.js)
+    earnDay:isDateKey(raw.earnDay) ? raw.earnDay : null,
+    earned:Number.isInteger(raw.earned) ? Math.max(0, Math.min(raw.earned, COIN.daily)) : 0,
+    gotKinds:cleanList(raw.gotKinds, 20, k => (typeof k === 'string' && /^[a-z0-9]{1,12}$/.test(k) ? k : null)),
+    looks:[...new Set([...cleanList(raw.looks, 20, x => (typeof x === 'string' && /^(hair|hairColor|outfit|shirt):\d$/.test(x) ? x : null)), ...worn])],
+    levelSeen:Number.isInteger(raw.levelSeen) ? raw.levelSeen : -1,
     savedAt:typeof raw.savedAt === 'string' && !isNaN(Date.parse(raw.savedAt)) ? raw.savedAt : null,   // 서버와 비교용 (cloud.js)
     cloudUid:typeof raw.cloudUid === 'string' && /^[0-9a-f-]{36}$/.test(raw.cloudUid) ? raw.cloudUid : null,
     days,
@@ -103,7 +111,7 @@ function demoState(){
     const moves = r() < .5 ? [{type:types[Math.floor(r()*types.length)], min:[20,30,40,60][Math.floor(r()*4)]}] : [];
     return [addDays(TODAY, -i), {mood:MOODS[Math.floor(r()*3)][0], rest:false, sleep:[5,5.5,6,6.5,7,7.5,8][Math.floor(r()*7)], moves, meals, goals:DEFAULT_GOALS}];
   }));
-  return normalize({seed:2026, name:'콩이', personality:params.get('p') ?? 'curious', born, lastVisit:TODAY, visitDays:30, met:true, seenItems:-1, got:ALL_ITEMS.filter((_, i) => i % 4),
+  return normalize({coins:120, seed:2026, name:'콩이', personality:params.get('p') ?? 'curious', born, lastVisit:TODAY, visitDays:30, met:true, seenItems:-1, got:ALL_ITEMS.filter((_, i) => i % 4),
     days:{...days, [TODAY]:{mood:'good', sleep:7, moves:[{type:'달리기', min:30}], meals:[{when:'아침', name:'계란 샌드위치'}, {when:'점심', name:'비빔밥'}]}}});
 }
 
@@ -225,7 +233,7 @@ function speech(act){
   const met = recentMeets(3)[0];   // 친구 캐릭터와 만난 이야기 (town.js)
   if (talk % 7 === 6 && met) return {t:meetLine(met)};
   if (talk % 8 === 2) return {t:pick(worldLines())};
-  if (talk % 9 === 5) return {t:pick(DEEP[register()][deepStage(daysBetween(state.born, TODAY))])};
+  if (talk % 9 === 5) return {t:pick(DEEP[register()][Math.min(levelOf(state), DEEP[register()].length - 1)])};   // 함께한 단계 = 레벨
   if (talk % 3 === 1){ const s = statusLine(); if (s) return s; }
   return {t:pick(L.doing[act])};
 }
@@ -286,6 +294,7 @@ function gainItem(key){
   return true;
 }
 function drawPanel(){
+  if (typeof drawCoin === 'function') drawCoin();   // reward.js
   if (typeof drawChat === 'function') drawChat();   // 질문이 바뀌면 입력칸 예시도 (chat.js)
 }
 function render(){
@@ -320,6 +329,7 @@ const summary = r => [
 // 기록 전후를 비교해 캐릭터가 차례로 대답 (시트·한 줄 입력 공용)
 function reactAfter(before, after, first = []){
   reactionTimers.forEach(clearTimeout);
+  earnFromRecord(before, after);   // reward.js
   const walked = !before.moves.length && after.moves.some(m => OUTDOOR.includes(m.type)) && state.parkDay !== TODAY;   // 오늘 첫 운동이 밖에서 한 거면 공원으로 초대 (수영·헬스는 X)
   const list = [...first, ...reactionsAfterRecord(before, after, state.personality), ...(walked ? [{t:PARK_TALK[register()].invite, go:'park'}] : [])];
   reactionTimers = list.map((r, i) => setTimeout(() => playReaction(r), i*REACTION_GAP_MS));
@@ -539,13 +549,14 @@ function drawEdit(){
   $('preview').innerHTML = avatar(draft);
   $('tabs').innerHTML = PARTS.map(p => `<button type="button" class="tab" role="tab" aria-selected="${p.k === tab}" data-tab="${p.k}">${p.label}</button>`).join('');
   const p = PARTS.find(x => x.k === tab), n = partSize(p);
-  $('opts').innerHTML = Array.from({length:n}, (_, i) => `<button type="button" class="opt ${p.colors ? '' : 'thumb'}" aria-pressed="${draft[p.k] === i}" data-opt="${i}" aria-label="${p.label} ${i + 1}">
-      ${p.colors ? `<span class="swatch" style="background:${p.colors[i]}"></span>` : avatar({...draft, [p.k]:i}, {crop:p.crop || 'face'})}
-    </button>`).join('');
+  $('opts').innerHTML = Array.from({length:n}, (_, i) => { const lock = !lookOwned(state, p.k, i);   // 잠금은 가게에서 (reward.js)
+    return `<button type="button" class="opt ${p.colors ? '' : 'thumb'} ${lock ? 'opt--lock' : ''}" aria-pressed="${draft[p.k] === i}" data-opt="${i}" ${lock ? 'data-lock' : ''} aria-label="${p.label} ${i + 1}${lock ? ', 가게에서 살 수 있어요' : ''}">
+      ${p.colors ? `<span class="swatch" style="background:${p.colors[i]}"></span>` : avatar({...draft, [p.k]:i}, {crop:p.crop || 'face'})}${lock ? `<span class="opt__price">${COIN_IMG}${PRICE.look}</span>` : ''}
+    </button>`; }).join('');
 }
 $('tabs').onclick = e => { const b = e.target.closest('[data-tab]'); if (b){ tab = b.dataset.tab; drawEdit(); } };
-$('opts').onclick = e => { const b = e.target.closest('[data-opt]'); if (b){ draft = {...draft, [tab]:+b.dataset.opt}; drawEdit(); } };
-$('rand').onclick = () => { draft = Object.fromEntries(PARTS.map(p => [p.k, Math.floor(Math.random()*partSize(p))])); drawEdit(); };
+$('opts').onclick = e => { const b = e.target.closest('[data-opt]'); if (!b) return; if (b.hasAttribute('data-lock')) return showToast('가게에서 코인으로 살 수 있어요'); draft = {...draft, [tab]:+b.dataset.opt}; drawEdit(); };
+$('rand').onclick = () => { draft = Object.fromEntries(PARTS.map(p => { const ok = Array.from({length:partSize(p)}, (_, i) => i).filter(i => lookOwned(state, p.k, i)); return [p.k, ok[Math.floor(Math.random()*ok.length)]]; })); drawEdit(); };
 function openEdit(title, then = null){
   draft = state.look; onEditClose = then; $('editTitle').textContent = title;
   $('edit').returnValue = ''; drawEdit(); $('edit').showModal();
@@ -651,6 +662,7 @@ function drawCharPage(){
   $('charBody').innerHTML = `
     <div class="me"><div class="me__av thumb">${avatar(state.look, {crop:'face'})}</div>
       <div class="me__t"><label class="me__label" for="nameInput">이름</label><input class="field" id="nameInput" maxlength="12" value="${esc(state.name)}"><p class="sub">${P_.label}</p></div></div>
+    ${rewardSection()}
     <p class="sec">요즘 좋아하는 것</p>
     <div class="chips">${interestsOn(state, TODAY).map(id => `<span class="tag">${INTERESTS[id].label}</span>`).join('')}</div>
     <p class="sub" style="margin-top:8px">소품 ${owned().size} / ${ALL_ITEMS.length}</p>
@@ -786,6 +798,7 @@ function start(){
   render();
   loadWeather();
   cloudStart().catch(err => console.warn('서버 연결 안 됨, 이 기기에만 저장', err));   // cloud.js
+  rewardOnOpen();   // 오늘 첫 방문·돌아온 날 코인 (reward.js)
   if (!state.met) openTitle();   // 타이틀 → 시작하기 → 첫 시작 (title.js)
   else if (awayEntries.length) openBack();
   else homeReady();

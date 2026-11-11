@@ -248,3 +248,14 @@ function meetingOn(a, b, date){
 }
 const meetsNow = hour => ['noon', 'evening'].includes(timeOf(hour));   // 오늘 만남은 낮부터
 const withRang = n => { const c = n.charCodeAt(n.length - 1) - 0xAC00; return n + (c >= 0 && c % 28 ? '이랑' : '랑'); };
+
+// ── 꾸준함 보상 계산 ──
+const levelOf = c => LEVELS.reduce((lv, L, i) => (c.visits.length >= L.at ? i : lv), 0);   // 들른 날 누적이라 끊겨도 안 내려감
+const lookOwned = (c, k, i) => !LOOK_LOCKED[k]?.includes(i) || c.looks.includes(`${k}:${i}`);
+// 같은 일은 하루 한 번, 하루 상한까지만. cap=false 는 상한 밖(돌아온 날·레벨업)
+function earnCoins(c, kind, amount, today, cap = true){
+  const s = c.earnDay === today ? c : {...c, earnDay:today, earned:0, gotKinds:[]};
+  if (s.gotKinds.includes(kind)) return {state:s, got:0};
+  const got = cap ? Math.max(0, Math.min(amount, COIN.daily - s.earned)) : amount;
+  return {state:{...s, coins:s.coins + got, earned:s.earned + (cap ? got : 0), gotKinds:[...s.gotKinds, kind]}, got};
+}

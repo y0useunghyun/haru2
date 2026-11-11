@@ -148,4 +148,16 @@ for (const reg of ['casual', 'polite']){
 }
 for (const t of Object.values(run('ATE_TALK')).flat()) assert.ok(t.includes('{n}') && !/\?\s*$/.test(t), t);
 assert.ok(!TK.OUTDOOR.includes('수영') && !TK.OUTDOOR.includes('근력'));
+// 꾸준함 보상: 같은 일은 하루 한 번, 하루 상한 30, 돌아온 날·레벨업은 상한 밖, 레벨은 누적이라 안 내려감
+const RW = run('({earnCoins, levelOf, lookOwned, COIN})');
+let w = {coins:0, earnDay:null, earned:0, gotKinds:[], looks:[]};
+const E = (k, n, cap) => { const r = RW.earnCoins(w, k, n, '2026-11-12', cap); w = r.state; return r.got; };
+assert.strictEqual(E('visit', 10), 10); assert.strictEqual(E('visit', 10), 0);
+['mood', 'sleep', 'meal', 'move', 'park'].forEach(k => E(k, 4));
+assert.strictEqual(w.coins, 30);   // 10 + 4×5 = 30, 상한 딱
+assert.strictEqual(E('back', 20, false), 20); assert.strictEqual(w.coins, 50);
+w = RW.earnCoins(w, 'visit', 10, '2026-11-13').state; assert.strictEqual(w.coins, 60);   // 다음 날 다시
+const V = n => ({visits:Array.from({length:n}, (_, i) => L.addDays('2026-01-01', i))});
+eq([0, 4, 5, 14, 15, 40, 80, 200].map(n => RW.levelOf(V(n))), [0, 0, 1, 1, 2, 3, 4, 4]);
+assert.ok(RW.lookOwned({looks:[]}, 'hair', 1) && !RW.lookOwned({looks:[]}, 'hair', 7) && RW.lookOwned({looks:['hair:7']}, 'hair', 7));
 console.log('check.js ok');

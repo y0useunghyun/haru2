@@ -221,3 +221,9 @@ const MEET_EVENTS = [
   {id:'board',  place:'town',
     past:{casual:'{r} 게시판에 그림 붙였어', polite:'{r} 게시판에 그림을 붙였어요'}, now:{casual:'{r} 게시판 앞에 있어!', polite:'{r} 게시판 앞에 있어요'}, feed:'게시판에 같이 그림을 붙였어요'},
 ];
+
+// ── 꾸준함 보상 (reward.js). 쌓이기만 하고 줄지 않음 — 연속 기록(끊기면 0) 없음 ──
+const COIN = {daily:30, visit:10, answer:4, park:4, back:20, level:30};   // daily = 하루 상한. back(며칠 만에 옴)·level 은 상한 밖
+const PRICE = {prop:30, look:50};
+const LEVELS = [{at:0, name:'처음 만난 사이'}, {at:5, name:'익숙한 사이'}, {at:15, name:'친한 친구'}, {at:40, name:'오래된 친구'}, {at:80, name:'단짝'}];   // at = 함께한(들른) 날 수
+const LOOK_LOCKED = {hair:[6, 7, 8, 9], hairColor:[4, 5], outfit:[2], shirt:[4, 5]};   // 가게에서 사는 꾸미기

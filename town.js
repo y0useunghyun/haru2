@@ -105,6 +105,7 @@ $('parkVn').onclick = e => {
     const it = pickOn(state, TODAY), take = go === 'take';
     state = {...state, parkDay:TODAY, picks:take ? [...state.picks, {id:it.id, date:TODAY}] : state.picks};
     vnLine = PARK_TALK[register()][take ? 'take' : 'leave'];
+    earn('park', COIN.park);   // reward.js
     vnNode = 'picked'; render(); drawPark(); return;
   }
   vnNode = go; vnLine = null; talk++; drawPark();
@@ -115,14 +116,15 @@ $('parkScene').onclick = e => { if (e.target.closest('#parkChar')){ talk++; draw
 $('parkPage').onclose = () => { if (nowActivity() === 'walk') doFor('wander', 60000); greeted = true; say(pick(lines().poke)); render(); };
 
 // ── 가게: 재화 없이 하루 하나, 아직 없는 물건 ──
-function drawShop(){
+function drawShop(){   // 오늘의 물건은 공짜로 하나 + 코인으로 사기 (reward.js 의 shopBuyList)
   const key = shopItem(state, TODAY);
-  if (state.shopDay === TODAY){ $('shopBody').innerHTML = '<p class="sub">오늘 물건은 받아 왔어요. 내일 또 들러요</p>'; return; }
-  if (!key){ $('shopBody').innerHTML = '<p class="sub">가게 물건을 다 모았어요</p>'; return; }
-  const {p, k, name} = itemOf(key);
-  $('shopBody').innerHTML = `<p class="sub" style="margin-top:-8px">오늘의 물건</p>
-    <div class="shop-item"><span class="pcard__img">${kindArt(p, k)}</span><b>${esc(name)} ${p.name}</b></div>
-    <button type="button" class="primary" id="shopTake">받아 오기</button>`;
+  let free = '<p class="sub">가게 물건을 다 모았어요</p>';
+  if (state.shopDay === TODAY) free = '<p class="sub">오늘 물건은 받아 왔어요. 내일 또 들러요</p>';
+  else if (key){ const {p, k, name} = itemOf(key);
+    free = `<p class="sub" style="margin-top:-8px">오늘의 물건 · 공짜</p>
+      <div class="shop-item"><span class="pcard__img">${kindArt(p, k)}</span><b>${esc(name)} ${p.name}</b></div>
+      <button type="button" class="primary" id="shopTake">받아 오기</button>`; }
+  $('shopBody').innerHTML = free + shopBuyList();
 }
 $('shopBody').onclick = e => {
   if (!e.target.closest('#shopTake')) return;

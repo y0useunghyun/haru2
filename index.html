@@ -33,6 +33,7 @@ if (location.protocol === 'https:') (function(c,l,a,r,i,t,y){
     </div>
     <button class="note" id="note" aria-label="캐릭터가 남긴 쪽지" hidden></button>
     <button class="bubble" id="bubble" aria-live="polite"></button>
+    <button type="button" class="coin" id="coinPill" aria-label="코인, 가게 열기"><span id="coinImg"></span><b id="coinN">0</b><i id="coinPlus" aria-hidden="true"></i></button>
   </div>
 
   <section class="panel" aria-label="캐릭터와 이야기">
@@ -228,6 +229,7 @@ if (location.protocol === 'https:') (function(c,l,a,r,i,t,y){
 <script src="pixel-room.js"></script>
 <script src="app.js"></script>
 <script src="chat.js"></script>
+<script src="reward.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="cloud.js"></script>
 <script src="pixel-town.js"></script>

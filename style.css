@@ -412,3 +412,28 @@ dialog{background:var(--bg);border:2px solid var(--ink);border-bottom:0}
 .msg__undo{align-self:flex-end;margin:-2px 2px 0;min-height:28px;font-size:12px;color:var(--text-2);text-decoration:underline;text-underline-offset:3px}
 .chip--write{border-style:dashed}   /* 고르는 칩과 달리 직접 적는 칸으로 들어감 (피드백: 「자세히」가 애매) */
 .cal-sub{margin:16px 0 0;font-size:13px;font-weight:600;color:var(--text-2)}
+
+/* ── 꾸준함 보상 (reward.js) ── */
+.coin__img{width:16px;height:16px}
+.coin{position:absolute;left:8px;top:8px;z-index:35;display:flex;align-items:center;gap:4px;min-height:30px;padding:0 10px 0 7px;border:2px solid #3B2A20;border-radius:15px;background:#FFF8E1;box-shadow:2px 2px 0 #3B2A20;font-size:13px;color:#3B2A20}
+.coin[hidden]{display:none}
+.coin b{font-weight:700;font-variant-numeric:tabular-nums}
+.coin i{position:absolute;left:100%;top:50%;margin-left:6px;font-style:normal;font-weight:700;font-size:13px;color:#E8A317;opacity:0;transform:translateY(-50%);pointer-events:none}
+.coin--pop{animation:coinPop .5s steps(3)}
+.coin--pop i{animation:coinPlus 1.2s ease-out}
+@keyframes coinPop{50%{transform:translateY(-3px)}}
+@keyframes coinPlus{0%{opacity:0;transform:translateY(-50%)}15%{opacity:1}100%{opacity:0;transform:translateY(-160%)}}
+@media (prefers-reduced-motion:reduce){.coin--pop,.coin--pop i{animation:none}}
+.opt{position:relative}
+.opt--lock{opacity:.55}
+.opt__price,.price{display:inline-flex;align-items:center;gap:2px;font-size:12px;font-weight:700;color:#3B2A20;font-variant-numeric:tabular-nums}
+.opt__price{position:absolute;right:4px;bottom:4px;padding:1px 5px;border-radius:8px;background:#FFF8E1}
+.price .coin__img,.opt__price .coin__img{width:13px;height:13px}
+.pcard.buy .price{margin-top:2px}
+.shop-coins{display:flex;align-items:center;gap:8px}
+.level{padding:12px 14px;border:2px solid var(--ink);border-radius:16px;background:#fff}
+.level b{font-size:16px}
+.level__bar{height:10px;margin:8px 0 6px;border:2px solid #3B2A20;border-radius:6px;background:#FFF3D6;overflow:hidden}
+.level__bar i{display:block;height:100%;background:#FFD23F}
+.level .sub{display:flex;align-items:center;gap:6px;margin:0}
+.pcard__img .swatch{display:block;width:40px;height:40px;margin:8px auto}
