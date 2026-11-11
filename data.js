@@ -166,7 +166,7 @@ const PAST = {
   casual:{window:'창밖을 구경했어',wander:'방 구석구석 돌아다녔어',read:'책을 읽었어',draw:'그림을 그렸어',plant:'화분에 물을 줬어',music:'음악을 들었어',collect:'반짝이는 걸 하나 찾았어',stretch:'방에서 몸을 쭉 폈어',walk:'산책 다녀왔어',nap:'낮잠을 잤어'},
   polite:{window:'창밖을 구경했어요',wander:'방을 천천히 걸어 다녔어요',read:'책을 읽었어요',draw:'그림을 그렸어요',plant:'화분에 물을 줬어요',music:'음악을 들었어요',collect:'작은 걸 하나 찾았어요',stretch:'몸을 천천히 풀었어요',walk:'산책 다녀왔어요',nap:'낮잠을 잤어요'},
 };
-const MOODS = [['good','좋았어'],['soso','보통'],['hard','힘들었어']];
+const MOODS = [['good','좋아'],['soso','보통'],['hard','힘들어']];   // 지금 기분 (하루에 하나, 마지막 값)
 
 const SKY = {morning:'#CFEBFF', noon:'#A9DBFF', evening:'#FFB98A', night:'#2B3566'};
 

@@ -145,7 +145,8 @@ function parseRecord(text, fallbackWhen = '간식'){
     when = WHEN_WORDS.find(([re]) => re.test(s))?.[1] ?? when;
     mood = MOOD_WORDS.find(([re]) => re.test(s))?.[1] ?? mood;
     const h = s.match(HOURS_RE), hours = h ? +h[1] + (h[2] ? .5 : 0) : null;
-    if (/잤|자고|수면|잠(?!깐)/.test(s) && !/낮잠/.test(s)){
+    // 「6시간」만 쓰면 잠 (캐릭터가 「몇 시간 잤어요?」 하고 묻기 때문)
+    if ((/잤|자고|수면|잠(?!깐)/.test(s) && !/낮잠/.test(s)) || /^\d+\s*시간\s*반?\s*(정도|쯤)?$/.test(s)){
       sleep = Math.min(14, hours ?? (/푹|꿀잠|늦잠|많이/.test(s) ? 9 : /못|조금|적게|설쳤|뒤척/.test(s) ? 5 : 7));
       continue;
     }

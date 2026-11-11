@@ -90,6 +90,10 @@ const met = days10.filter(d => L.meetingOn(A, B, d)).length;
 assert.ok(met >= 1 && met <= 8, `만난 날 ${met}`);
 assert.strictEqual(L.withRang('콩이'), '콩이랑');
 assert.strictEqual(L.withRang('하늘'), '하늘이랑');
+// 질문에 대한 짧은 대답: 「6시간」만 쓰면 잠, 「2시간 걸었어」는 운동
+assert.strictEqual(P('6시간').sleep, 6);
+assert.strictEqual(P('7시간 반').sleep, 7.5);
+assert.strictEqual(P('2시간 걸었어').sleep, null);
 // 대사: 원래 대사는 남고 덧붙은 것이 뒤에. 모든 행동·시간대·날씨·계절·단계에 빈 칸이 없음
 const T = run('({LINES, WORLD, DEEP, deepStage, ACTIVITIES})');
 assert.strictEqual(T.LINES.calm.doing.plant[0], '잎이 조금 자란 것 같아요');

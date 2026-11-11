@@ -36,12 +36,13 @@ if (location.protocol === 'https:') (function(c,l,a,r,i,t,y){
   </div>
 
   <section class="panel" aria-labelledby="moodTitle">
-    <div class="panel__top"><p class="panel__q" id="moodTitle">오늘 어땠어요?</p><button class="panel__more" id="recBtn">잠·운동·식사 ›</button></div>
+    <div class="panel__top"><p class="panel__q" id="moodTitle">지금 기분은 어때요?</p></div>
     <div class="moods" id="moods"></div>
     <form class="say" id="sayForm" autocomplete="off" data-clarity-mask="true">
-      <input class="field say__in" id="sayInput" maxlength="120" enterkeyhint="send" placeholder="예: 점심에 김밥, 30분 걸었어" aria-label="오늘 한 일 적기">
+      <input class="field say__in" id="sayInput" maxlength="120" enterkeyhint="send" placeholder="말해 주기…" aria-label="캐릭터에게 오늘 한 일 말하기">
       <button class="say__go" aria-label="남기기">↑</button>
     </form>
+    <div class="panel__top panel__today"><span id="todayLine"></span><button class="panel__more" id="recBtn">잠·운동·식사 ›</button></div>
   </section>
 </main>
 <div class="toast" id="toast" role="status" hidden><span id="toastText"></span><button type="button" class="toast__undo" id="toastUndo" hidden>되돌리기</button></div>

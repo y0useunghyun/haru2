@@ -310,7 +310,7 @@ dialog{background:var(--bg);border:2px solid var(--ink);border-bottom:0}
 
 /* ── 도트 장면: 모두 가로 100칸, 비율 고정. 캐릭터 20칸 = 장면 폭 20% ── */
 .scene-img{position:absolute;inset:0;width:100%;height:100%}
-.scene{flex:none;height:auto;min-height:0;aspect-ratio:100/122;width:min(100%,calc((100dvh - 250px)*.82));margin:0 auto;background:#FFF3D6}
+.scene{flex:none;height:auto;min-height:0;aspect-ratio:100/122;width:min(100%,calc((100dvh - 290px)*.82));margin:0 auto;background:#FFF3D6}
 .actor{width:20cqw}
 .bubble{top:calc(var(--y)*1cqh - 27cqw)}
 .is-lying ~ .bubble{top:calc(var(--y)*1cqh - 18cqw)}
@@ -328,7 +328,7 @@ dialog{background:var(--bg);border:2px solid var(--ink);border-bottom:0}
 .pcard__img .kind{width:100%;height:56px;object-fit:contain}
 .shop-item .pcard__img .kind{height:96px}
 @media (min-width:600px) and (hover:hover) and (pointer:fine){
-  .scene{width:min(100%,calc((var(--ph) - 300px)*.82))}
+  .scene{width:min(100%,calc((var(--ph) - 340px)*.82))}
   .scene--first{width:min(calc(100% - 40px),calc((var(--ph) - 380px)*.82))}
   .scene--visit{width:min(calc(100% - 40px),calc((var(--ph) - 280px)*.82))}
   .scene--town{width:calc(100% - 40px)}
@@ -352,7 +352,9 @@ dialog{background:var(--bg);border:2px solid var(--ink);border-bottom:0}
 .is-lying .char{transform:none}
 .is-lying .av{animation:none}
 
-/* 홈: 방은 위, 기록 칸은 화면 아래 (엄지 닿는 곳) */
-#scene ~ .panel{margin-top:auto}
+/* 홈: 기록 칸은 방 바로 아래 (말풍선 질문과 이어지게) */
+.panel__today{margin:2px 0 0;font-size:13px;color:var(--text-2)}
+.panel__today .panel__more{flex:none;white-space:nowrap;min-height:36px}
+.panel__today span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* 나가 있을 땐 말풍선이 쪽지 위에 */
 .actor[hidden] ~ .bubble{top:calc(78cqh - 3cqw)}

@@ -186,6 +186,13 @@ function worldLines(){   // 날씨·계절. 밤에 맑음·흐림이면 계절
   const W = WORLD[register()];
   return timeOf(hourNow()) === 'night' && (weather === 'clear' || weather === 'cloud') ? W.season[seasonOf(TODAY)] : Math.floor(talk / 8) % 2 ? W.weather[weather] : W.season[seasonOf(TODAY)];
 }
+function askLine(){   // 아직 안 남긴 것: 잠 → 식사 → 운동 순
+  const d = todayRec(), A = ASK[register()], time = timeOf(hourNow());
+  if (d.sleep == null && time !== 'night') return A.sleep;
+  if (!d.meals.length) return A.meal[time];
+  if (!d.moves.length && !d.rest && time !== 'morning') return A.move;
+  return null;
+}
 function speech(act){
   const L = lines();
   if (poke) return {t:poke};
@@ -196,6 +203,7 @@ function speech(act){
     if (state.visitDays <= 2 && !hasRecord(todayRec())) return {t:pick(L.shy)};
     return {t:pick(L.hello[timeOf(hourNow())])};
   }
+  if (talk % 3 === 0){ const q = askLine(); if (q) return {t:q, go:'say'}; }
   const met = recentMeets(3)[0];   // 친구 캐릭터와 만난 이야기 (town.js)
   if (talk % 7 === 6 && met) return {t:meetLine(met)};
   if (talk % 8 === 2) return {t:pick(worldLines())};
@@ -261,7 +269,9 @@ function gainItem(key){
   return true;
 }
 function drawPanel(){
-  const d = todayRec();
+  const d = todayRec(), done = summary(d);
+  $('todayLine').textContent = done ? `오늘 남긴 것 · ${done}` : `오늘 한 일을 ${state.name || '캐릭터'}에게 말해 보세요`;
+  $('sayInput').placeholder = `${state.name || '캐릭터'}에게 말해 주기…`;
   $('moods').innerHTML = MOODS.map(([k, label]) => `<button type="button" class="chip mood" data-mood="${k}" aria-pressed="${d.mood === k}">${label}</button>`).join('');
 }
 function render(){
@@ -283,13 +293,13 @@ $('char').onclick = () => {
   talk++; poke = pick(lines().poke); render(); hop();
   clearTimeout(pokeTimer); pokeTimer = setTimeout(() => { poke = null; talk++; render(); }, 2000);
 };
-$('bubble').onclick = () => { if (currentGo === 'meal') openMeal(-1); else if (currentGo === 'park') openPark(); else { talk++; render(); } };
+$('bubble').onclick = () => { if (currentGo === 'meal') openMeal(-1); else if (currentGo === 'park') openPark(); else if (currentGo === 'say') $('sayInput').focus(); else { talk++; render(); } };
 $('note').onclick = () => openPark();   // 쪽지 = 공원에 나가 있어요 → 공원에서 만남 (town.js)
 $('moods').onclick = e => {
   const b = e.target.closest('[data-mood]'); if (!b) return;
   const k = b.dataset.mood, off = todayRec().mood === k;
   setToday({mood:off ? null : k});
-  if (!off) say(pick(lines().mood[k]));
+  if (!off){ say(pick(lines().mood[k])); window.clarity?.('event', 'mood'); }   // Clarity Smart Event 후보
   render(); if (!off) hop();
 };
 setInterval(() => { greeted = true; talk++; tick = Math.floor(Date.now()/60000); if (Date.now() >= overrideUntil) override = null; render(); }, 15000);
@@ -317,6 +327,7 @@ $('sayForm').onsubmit = e => {
     moves:[...before.moves, ...r.moves], meals:[...before.meals, ...r.meals],
   });
   $('sayInput').value = '';
+  window.clarity?.('event', 'record_line');   // Clarity Smart Event 후보: 알아들은 한 줄만
   const t = today(), food = r.meals.flatMap(m => hits(m.name));
   const first = [
     ...(r.mood && r.mood !== before.mood ? [{t:pick(L.mood[r.mood])}] : []),
@@ -679,7 +690,7 @@ function drawFirst(){
     () => firstFrame(full + firstActor(state.look, ''), `<p class="first__h" tabindex="-1" autofocus>방에 하나 둘까요?</p>
         <div class="props-grid">${PROPS[0].kinds.map((n, i) => `<button type="button" class="pcard" data-kind="${i}" data-plant="${i}" aria-pressed="${i === firstDraft.plant}"><span class="pcard__img">${kindArt(PROPS[0], i)}</span><b>${n}</b></button>`).join('')}</div>
         <button type="button" class="primary" data-first="next">여기 둘게요</button>`),
-    () => firstFrame(full + firstActor(state.look, reply ?? (PERSONALITIES[firstDraft.personality].register === 'casual' ? '앞으로 여기서 같이 지내는 거야?' : '앞으로 여기서 같이 지내는 거예요?')), `<p class="first__h" tabindex="-1" autofocus>오늘 어땠어요?</p>
+    () => firstFrame(full + firstActor(state.look, reply ?? (PERSONALITIES[firstDraft.personality].register === 'casual' ? '앞으로 여기서 같이 지내는 거야?' : '앞으로 여기서 같이 지내는 거예요?')), `<p class="first__h" tabindex="-1" autofocus>지금 기분은 어때요?</p>
         <div class="moods">${MOODS.map(([k, label]) => `<button type="button" class="chip mood" data-fmood="${k}" aria-pressed="${todayRec().mood === k}">${label}</button>`).join('')}</div>
         <button type="button" class="primary" data-first="done">${todayRec().mood ? '같이 지내볼게요' : '나중에 할게요'}</button>`),
   ];
