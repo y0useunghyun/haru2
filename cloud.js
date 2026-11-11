@@ -21,6 +21,7 @@ async function cloudStart(){
   }
   cloudUser = session.user;
   await cloudPull();
+  document.dispatchEvent(new Event('haru:cloud'));   // 친구 실시간 (friends.js)
 }
 // 서버 것과 이 기기 것 중 하나 고르기
 // 다른 계정으로 쓰던 기기(새 기기·이메일로 불러옴)면 서버 것, 같은 계정이면 더 최근에 저장한 것
@@ -41,6 +42,7 @@ async function cloudPush(){
   state = {...state, cloudUid:cloudUser.id};
   const {error} = await sb.from('saves').upsert({user_id:cloudUser.id, data:state, updated_at:state.savedAt ?? new Date().toISOString()});
   if (error) console.warn('서버 저장 실패', error);
+  if (typeof friendSyncRoom === 'function') friendSyncRoom();   // 방이 바뀌었으면 친구에게도
 }
 // save() 가 부를 때마다 2초 모아서 한 번
 function cloudQueue(){

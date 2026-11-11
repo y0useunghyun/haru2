@@ -31,7 +31,7 @@ function oldGot(raw, days){
 }
 const cleanList = (raw, max, fn) => (Array.isArray(raw) ? raw : []).map(fn).filter(Boolean).slice(-max);
 // 친구는 받은 코드 그대로 저장하고, 읽을 때마다 같은 검사를 지난다
-function cleanFriend(f){ const r = readCode(f?.code); return r?.type === 'room' && isDateKey(f.at) ? {code:f.code, at:f.at, room:r.data} : null; }
+function cleanFriend(f){ const r = readCode(f?.code); return r?.type === 'room' && isDateKey(f.at) ? {code:f.code, at:f.at, room:r.data, ...(/^[0-9a-f-]{36}$/.test(f.uid ?? '') ? {uid:f.uid} : {})} : null; }   // uid = 서버 친구 (friends.js)
 function cleanMail(m){
   if (!Number.isInteger(m?.id) || !isDateKey(m.date) || !inRange(m.greet, GREETS.length)) return null;
   return {id:m.id, from:cleanName(m.from, '친구'), greet:m.greet, item:ALL_ITEMS.includes(m.item) ? m.item : null, date:m.date};

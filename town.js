@@ -37,8 +37,8 @@ function drawTown(){
     ${state.friends.length ? state.friends.map(f => `<button type="button" class="friend-row" data-friend="${f.room.seed}">
         <span class="friend-row__av thumb">${avatar(f.room.look, {crop:'face'})}</span>
         <span class="friend-row__t"><b>${esc(f.room.name)}</b><span class="sub">${metToday(f) ? '오늘 같이 놀았어요' : NOW_TEXT[friendNow(f)]}</span></span><span aria-hidden="true">›</span></button>`).join('')
-      : '<p class="sub">친구에게 내 방 코드를 보내 보세요</p>'}
-    <div class="chips"><button type="button" class="chip" id="myCodeBtn">내 방 코드 보내기</button><button type="button" class="chip" id="codeInBtn">받은 코드 넣기</button></div>`;
+      : '<p class="sub">친구에게 내 방 초대 링크를 보내 보세요</p>'}
+    <div class="chips"><button type="button" class="chip" id="myCodeBtn">${typeof cloudUser !== 'undefined' && cloudUser && canLink() ? '내 방 초대 링크' : '내 방 코드 보내기'}</button><button type="button" class="chip" id="codeInBtn">받은 코드 넣기</button></div>`;
 }
 function goPlace(place){
   if (place === 'park') openPark();
@@ -49,6 +49,7 @@ $('townBtn').onclick = () => { drawTown(); $('townPage').showModal(); };
 $('townArt').onclick = e => { const g = e.target.closest('[data-place]'); if (g) goPlace(g.dataset.place); };
 $('townBody').onclick = e => {
   const fr = e.target.closest('[data-friend]'); if (fr) openFriend(+fr.dataset.friend);
+  if (e.target.closest('#myCodeBtn') && typeof inviteOpen === 'function' && inviteOpen()) return;   // 서버 친구 (friends.js)
   if (e.target.closest('#myCodeBtn')) openCode('내 방 코드', toCode('room', roomData(state, myKinds())), '친구가 이 링크를 열거나 코드를 넣으면 내 방에 놀러 와요. 서로 코드를 넣으면 캐릭터끼리 마을에서 만나요');
   if (e.target.closest('#codeInBtn')){ $('codeInBox').value = ''; $('codeIn').returnValue = ''; $('codeIn').showModal(); }
 };
@@ -193,6 +194,10 @@ $('greetSheet').onclick = e => {
   const f = state.friends.find(x => x.room.seed === friendSel);
   const code = toCode('gift', {f:state.name, s:state.seed, t:f.room.seed, g:greetDraft.g, it:greetDraft.it, d:TODAY, r:Math.floor(Math.random()*1e6)});
   $('greetSheet').close();
+  if (f.uid && typeof sendMail === 'function'){   // 서버 친구면 바로 전달, 안 되면 코드로
+    sendMail(f.uid, code).then(ok => ok ? showToast(`${f.room.name}에게 보냈어요`) : openCode(`${f.room.name}에게 보낼 인사`, code, '친구가 링크를 열거나 「받은 코드 넣기」에 붙여 넣으면 전해져요'));
+    return;
+  }
   openCode(`${f.room.name}에게 보낼 인사`, code, '친구가 링크를 열거나 「받은 코드 넣기」에 붙여 넣으면 전해져요. 선물은 내 방에서도 그대로 있어요');
 };
 
