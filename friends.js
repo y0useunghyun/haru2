@@ -61,9 +61,11 @@ async function inviteOpen(){
 }
 // 받은 6글자 코드 → 서로 친구 (town.js takeCode 가 먼저 물어봄)
 async function takeShortCode(text){
-  if (!sb || !cloudUser) return showToast('짧은 코드는 인터넷이 될 때 넣을 수 있어요');
-  await friendSyncRoom();
-  const {data:uid, error} = await sb.rpc('add_friend_code', {code:text});
+  showToast('친구를 찾는 중…');
+  if (!cloudUser) await cloudStart().catch(err => console.warn('다시 연결 실패', err));   // 끊겨 있으면 한 번 더
+  if (!sb || !cloudUser) return showToast('서버에 연결되지 않았어요. 인터넷을 확인하고 다시 넣어 주세요');
+  try { await friendSyncRoom(); } catch (err){ console.warn('방 올리기 실패', err); }
+  const {data:uid, error} = await sb.rpc('add_friend_code', {code:text}).catch(err => ({error:err}));
   if (error || !uid){ console.warn('친구 코드 실패', error); return showToast('그런 친구 코드가 없어요. 6글자를 다시 확인해 주세요'); }
   if (uid === cloudUser.id) return showToast('내 친구 코드예요. 친구에게 보내 주세요');
   await refreshFriends();
