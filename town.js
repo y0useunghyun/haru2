@@ -37,8 +37,8 @@ function drawTown(){
     ${state.friends.length ? state.friends.map(f => `<button type="button" class="friend-row" data-friend="${f.room.seed}">
         <span class="friend-row__av thumb">${avatar(f.room.look, {crop:'face'})}</span>
         <span class="friend-row__t"><b>${esc(f.room.name)}</b><span class="sub">${metToday(f) ? '오늘 같이 놀았어요' : NOW_TEXT[friendNow(f)]}</span></span><span aria-hidden="true">›</span></button>`).join('')
-      : '<p class="sub">친구에게 내 친구 코드를 보내 보세요</p>'}
-    <div class="chips"><button type="button" class="chip" id="myCodeBtn">${typeof cloudUser !== 'undefined' && cloudUser ? '내 친구 코드' : '내 방 코드 보내기'}</button><button type="button" class="chip" id="codeInBtn">받은 코드 넣기</button></div>`;
+      : '<p class="sub">친구에게 내 코드를 보내 보세요</p>'}
+    <div class="chips"><button type="button" class="chip" id="myCodeBtn">${typeof cloudUser !== 'undefined' && cloudUser ? '내 코드' : '내 방 코드 보내기'}</button><button type="button" class="chip" id="codeInBtn">받은 코드 넣기</button></div>`;
 }
 function goPlace(place){
   if (place === 'park') openPark();
@@ -227,7 +227,7 @@ $('codeCopy').onclick = async () => {
 };
 $('codeShare').onclick = async () => {
   const v = $('codeBox').value, link = $('codeBox').dataset.link;   // 6글자 코드면 코드 + 링크를 같이
-  try { await navigator.share(link ? {title:'하루 2', text:`${state.name}의 하루 친구 코드: ${v}`, url:link} : {title:'하루 2', text:`${state.name}에게서 온 하루 2 코드`, url:v}); }
+  try { await navigator.share(link ? {title:'하루 2', text:`${state.name}의 하루 코드: ${v}`, url:link} : {title:'하루 2', text:`${state.name}에게서 온 하루 2 코드`, url:v}); }
   catch (err){ if (err.name !== 'AbortError') { console.warn('공유 실패', err); showToast('공유하지 못했어요. 복사하기를 써 주세요'); } }
 };
 $('codeIn').onclose = () => { if ($('codeIn').returnValue === 'ok') takeCode($('codeInBox').value); };

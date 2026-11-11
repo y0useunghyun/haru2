@@ -46,7 +46,7 @@ async function sendMail(uid, code){
   if (error){ console.warn('인사 보내기 실패', error); return false; }
   return true;
 }
-// 내 친구 코드(6글자, 서버가 만듦) — town.js 「내 친구 코드」. 링크도 같이
+// 내 친구 코드(6글자, 서버가 만듦) — town.js 「내 코드」. 링크도 같이
 const SHORT_RE = /^[A-Za-z2-9]{3}-?[A-Za-z2-9]{3}$/;
 const prettyCode = c => `${c.slice(0, 3)}-${c.slice(3)}`;
 async function inviteOpen(){
@@ -54,7 +54,7 @@ async function inviteOpen(){
   await friendSyncRoom();
   const {data} = await sb.from('rooms').select('short_code').eq('user_id', cloudUser.id).maybeSingle();
   if (!data?.short_code) return false;   // 서버 준비 전이면 예전 긴 코드로
-  openCode('내 친구 코드', '', '친구가 「받은 코드 넣기」에 이 6글자를 넣으면 서로 친구가 돼요. 방을 바꾸면 친구 화면에도 바로 바뀌어요');
+  openCode('내 코드', '', '친구가 「받은 코드 넣기」에 이 6글자를 넣으면 서로 친구가 돼요. 방을 바꾸면 친구 화면에도 바로 바뀌어요');
   $('codeBox').value = prettyCode(data.short_code); $('codeBox').classList.add('code-box--short');
   $('codeBox').dataset.link = location.protocol.startsWith('http') ? `${location.origin}${location.pathname}?f=${cloudUser.id}` : '';
   return true;
@@ -68,7 +68,7 @@ async function takeShortCode(text){
   let uid = null, error = null;   // supabase 요청은 .catch 가 없어서 try 로
   try { ({data:uid, error} = await sb.rpc('add_friend_code', {code:text})); } catch (err){ error = err; }
   if (error || !uid){ console.warn('친구 코드 실패', error); return showToast('그런 친구 코드가 없어요. 6글자를 다시 확인해 주세요'); }
-  if (uid === cloudUser.id) return showToast('내 친구 코드예요. 친구에게 보내 주세요');
+  if (uid === cloudUser.id) return showToast('내 코드예요. 친구에게 보내 주세요');
   await refreshFriends();
   const f = state.friends.find(x => x.uid === uid);
   if (f){ showToast(`${josa(f.room.name, ['과', '와'])} 친구가 됐어요`); openFriend(f.room.seed); }
