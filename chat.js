@@ -58,3 +58,44 @@ function chitchatLine(text){
   return hit[1][register()].replace('{n이야}', josa(state.name, ['이야', '야'])).replace('{n이에요}', josa(state.name, ['이에요', '예요']))
     .replace('{doing}', pick(lines().doing[nowActivity()])).replace('{past}', pastLines()[activityFor(state, TODAY, 11)]);
 }
+
+// ── AI 대답 (api/talk.js, Haiku 5.5). 로그인(cloud.js)돼 있고 인터넷이 될 때만, 아니면 null → 단어 표 대답 ──
+const AI_URL = 'https://my-haru2.vercel.app/api/talk';   // GitHub Pages·파일로 열어도 이 주소
+const AI_TIMEOUT_MS = 8000;
+let aiBusy = false;
+async function askAI(text){
+  if (!sb || !cloudUser) return null;
+  aiBusy = true; $('sayInput').placeholder = '생각하는 중…';
+  try {
+    const {data:{session}} = await sb.auth.getSession();
+    if (!session) return null;
+    const res = await fetch(AI_URL, {
+      method:'POST', signal:AbortSignal.timeout(AI_TIMEOUT_MS),
+      headers:{'Content-Type':'application/json', Authorization:`Bearer ${session.access_token}`},
+      body:JSON.stringify({text, ask:openAsk, name:state.name, personality:PERSONALITIES[state.personality].label, register:register(),
+        recent:chat.slice(-5, -1).map(m => ({me:m.me, t:m.t}))}),
+    });
+    if (!res.ok) return null;
+    const out = await res.json();
+    return out.fallback || typeof out.reply !== 'string' ? null : out;
+  } catch (err){ console.warn('AI 대답 안 됨, 단어 표로', err); return null; }
+  finally { aiBusy = false; drawChat(); }
+}
+// AI가 뽑은 기록을 남기고, AI 대답을 캐릭터가 말함 (단어 표 반응은 겹치니 안 함)
+function applyAI(ai){
+  const before = todayRec(), when = guessWhen();
+  const meals = ai.meals.map(m => ({when, name:String(m.name).slice(0, 40)})).filter(m => m.name);
+  const moves = ai.moves.filter(m => MOVE_TYPES[m.type]).map(m => ({type:m.type, min:Math.max(5, Math.min(300, Math.round(m.min) || 30))}));
+  const sleep = typeof ai.sleep_hours === 'number' && ai.sleep_hours > 0 && ai.sleep_hours <= 14 ? ai.sleep_hours : null;
+  const mood = ['good', 'soso', 'hard'].includes(ai.mood) ? ai.mood : null;
+  const recorded = mood || sleep != null || meals.length || moves.length;
+  if (ai.skip && openAsk) skipAsk(openAsk);
+  if (recorded){
+    setToday({...(mood ? {mood} : {}), ...(sleep != null ? {sleep} : {}), meals:[...before.meals, ...meals], moves:[...before.moves, ...moves]});
+    window.clarity?.('event', 'record_line');
+  }
+  const reply = ai.reply.slice(0, 80);
+  say(reply); chatPush(false, reply);
+  if (recorded) chatUndo(before);
+  askAfter(0); render(); hop();
+}

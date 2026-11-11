@@ -325,13 +325,19 @@ function reactAfter(before, after, first = []){
   reactionTimers = list.map((r, i) => setTimeout(() => playReaction(r), i*REACTION_GAP_MS));
   reactionTimers.push(askAfter(list.length*REACTION_GAP_MS));   // 다 대답하면 다음 질문
 }
-$('sayForm').onsubmit = e => {
+$('sayForm').onsubmit = async e => {
   e.preventDefault();
-  const text = $('sayInput').value.trim(); if (!text) return;
+  const text = $('sayInput').value.trim(); if (!text || aiBusy) return;
   chatPush(true, text);
   const answer = t => { $('sayInput').value = ''; say(t); chatPush(false, t); askAfter(0); render(); hop(); };
   const small = isEmptyParse(parseRecord(text, guessWhen())) && chitchatLine(text);   // 기록이 아닌 말이면 질문의 대답으로 받기 전에 잡담으로 (「안녕」이 음식이 되지 않게)
   if (small) return answer(small);
+  // 단어 표가 하나도 못 알아들은 말은 AI에게 (질문 문맥으로 억지로 받으면 「시험 망쳤어」가 음식이 됨). 안 되면 아래 단어 표 방식으로
+  if (isEmptyParse(parseRecord(text, guessWhen()))){
+    $('sayInput').value = '';
+    const ai = await askAI(text);   // chat.js
+    if (ai) return applyAI(ai);
+  }
   const r = parseAnswer(text, openAsk, guessWhen());
   if (r.skip){ const kind = openAsk; skipAsk(kind); return answer(SKIP_TALK[register()][kind] ?? pick(lines().rest)); }
   if (isEmptyParse(r)) return answer(CHAT_ELSE[register()]);
