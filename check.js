@@ -1,7 +1,7 @@
 // 계산 확인: node check.js  (브라우저처럼 data.js → life.js 를 같은 공간에 불러온 뒤 검사)
 const vm = require('vm'), fs = require('fs'), assert = require('assert');
 const ctx = vm.createContext({btoa, atob, TextEncoder, TextDecoder, console});
-for (const f of ['data.js', 'talk.js', 'life.js']) vm.runInContext(fs.readFileSync(`${__dirname}/${f}`, 'utf8'), ctx, {filename:f});
+for (const f of ['food.js', 'data.js', 'talk.js', 'life.js']) vm.runInContext(fs.readFileSync(`${__dirname}/${f}`, 'utf8'), ctx, {filename:f});
 const run = code => vm.runInContext(code, ctx);
 const L = run('({activityFor, interestsOn, growInterests, together, awayLog, daysBetween, addDays, ownedItems, shopItem, ITEM_ORDER, ALL_ITEMS, parseRecord, isEmptyParse, toCode, readCode, roomData, seasonOf, cleanLook, DEFAULT_LOOK, meetingOn, withRang})');
 const eq = (a, b) => assert.deepStrictEqual(JSON.parse(JSON.stringify(a)), b);
@@ -109,9 +109,22 @@ for (const W of Object.values(T.WORLD)){
 }
 eq([0, 6, 7, 20, 21, 59, 60, 400].map(T.deepStage), [0, 0, 1, 1, 2, 2, 3, 3]);
 for (const D of Object.values(T.DEEP)) assert.strictEqual(D.length, 4);
-// 대화창 빠른 대답은 모두 알아듣는 말이어야 함 (chat.js 의 QUICK)
-const QUICK = vm.runInContext(fs.readFileSync(`${__dirname}/chat.js`, 'utf8').match(/const QUICK = (\{[\s\S]*?\n\});/)[1].replace(/^/, '(') + ')', ctx);
-for (const t of [...QUICK.sleep, ...Object.values(QUICK.meal).flat(), ...QUICK.move]) assert.ok(!L.isEmptyParse(P(t)), t);
+// 대화창 예시 문구는 모두 알아듣는 말 (chat.js 의 HINT)
+const HINT = vm.runInContext('(' + fs.readFileSync(`${__dirname}/chat.js`, 'utf8').match(/const HINT = (\{.*?\});/)[1] + ')', ctx);
+for (const h of Object.values(HINT)) for (const t of h.replace('예: ', '').split(', ')) assert.ok(!L.isEmptyParse(P(t)), t);
+// 질문 문맥으로 해석: 「6」= 잠, 처음 보는 말 = 식사, 「아니」= 넘김
+const ANS = (t, k) => run(`parseAnswer(${JSON.stringify(t)}, ${JSON.stringify(k)}, '점심')`);
+assert.strictEqual(ANS('6', 'sleep').sleep, 6);
+eq(ANS('쌀국수집 신메뉴', 'meal').meals.length, 1);
+eq(ANS('클라이밍', 'move').moves, [{type:'운동', min:30}]);
+assert.ok(ANS('안 먹었어', 'meal').skip); assert.strictEqual(ANS('안 좋아', 'mood').mood, 'hard'); assert.ok(!ANS('안 좋아', 'mood').skip); assert.ok(ANS('아니', 'move').skip);
+assert.strictEqual(ANS('김밥', 'sleep').meals[0].name, '김밥');   // 다른 걸 말해도 알아들은 건 그대로
+assert.ok(!ANS('ㅋㅋ', null).skip && L.isEmptyParse(ANS('ㅋㅋ', null)));
 assert.strictEqual(P('푹 잤어').sleep, 9);
 eq(['좋아', '보통', '힘들어', '안 좋아'].map(t => P(t).mood), ['good', 'soso', 'hard', 'hard']);
+// 음식 단어: 처음 보는 이름도 끝말로 짐작, 한 글자는 끝에 올 때만
+const H = t => run(`hits(${JSON.stringify(t)})`);
+eq(H('마라탕'), ['마라탕']); eq(H('마라샹궈'), ['마라샹궈']); eq(H('소고기무국'), ['소고기', '국']);
+eq(H('밥을'), ['밥']); eq(H('김치국'), ['김치', '국']);
+eq(H('어떡해'), []); eq(H('면접'), []); eq(H('콩이랑'), []);
 console.log('check.js ok');

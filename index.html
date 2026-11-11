@@ -38,7 +38,6 @@ if (location.protocol === 'https:') (function(c,l,a,r,i,t,y){
   <section class="panel" aria-label="캐릭터와 이야기">
     <div class="chat">
       <div class="chat__log" id="chatLog" aria-live="polite" data-clarity-mask="true"></div>
-      <div class="chat__quick" id="chatQuick" hidden></div>
       <form class="say" id="sayForm" autocomplete="off" data-clarity-mask="true">
         <input class="field say__in" id="sayInput" maxlength="120" enterkeyhint="send" placeholder="말해 주기…" aria-label="캐릭터에게 오늘 한 일 말하기">
         <button class="say__go" aria-label="보내기">↑</button>
@@ -215,6 +214,7 @@ if (location.protocol === 'https:') (function(c,l,a,r,i,t,y){
   <button class="primary" value="ok" id="codeInOk">넣기</button>
 </form></dialog>
 
+<script src="food.js"></script>
 <script src="data.js"></script>
 <script src="talk.js"></script>
 <script src="life.js"></script>

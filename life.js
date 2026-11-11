@@ -117,9 +117,14 @@ const itemOf = key => { const [id, k] = key.split(':'); const p = PROPS.find(x =
 const seasonOf = key => { const m = +key.slice(5, 7); return m >= 3 && m <= 5 ? 'spring' : m >= 6 && m <= 8 ? 'summer' : m >= 9 && m <= 11 ? 'autumn' : 'winter'; };
 
 // ── 음식 이름 → 아는 음식 ──
+// 한 글자 음식(밥·국·면·떡·탕…)은 조사를 뗀 단어의 끝에 올 때만: 「밥을」「김치국」은 O, 「어떡해」「면접」은 X
+const JOSA = /(이랑|하고|으로|을|를|랑|은|는|도|만|이|가|로)$/;
 const hits = name => name.split(/\s+/).flatMap(w => {
   const found = [];
-  for (const k of FOOD_KEYS) while (w.includes(k)) { found.push(k); w = w.replace(k, ' '); }
+  for (const k of FOOD_KEYS){
+    if (k.length > 1){ while (w.includes(k)) { found.push(k); w = w.replace(k, ' '); } continue; }
+    if (w.trim().replace(JOSA, '').endsWith(k)){ found.push(k); w = ' '; }
+  }
   return found;
 });
 
@@ -166,6 +171,20 @@ function parseRecord(text, fallbackWhen = '간식'){
     when = at;
   }
   return {sleep, moves, meals, mood, rest};
+}
+// 캐릭터가 물어본 것(kind)에 대한 대답. 못 알아들으면 질문 종류로 받는다
+// 「6」→ 잠 6시간 / 식사 질문에 처음 보는 말 → 그 이름으로 식사 / 운동 질문에 「클라이밍」→ 운동 30분
+// 「아니」「안 먹었어」 같은 대답은 skip (그 질문은 오늘 다시 안 물음)
+const NO_ANSWER = /^(아니|아뇨|못|없어|글쎄|몰라)|안\s*(먹|했|움직|잤)|굶/;   // 「안 좋아」는 기분이라 넣지 않음
+function parseAnswer(text, kind, when){
+  const r = parseRecord(text, when), s = String(text).trim().slice(0, 40);
+  if (kind && NO_ANSWER.test(s)) return {...r, meals:[], skip:true};   // 「안 먹었어」가 식사로 남지 않게 먼저
+  if (!isEmptyParse(r) || !kind) return {...r, skip:false};
+  const n = s.match(/^(\d+(?:\.\d+)?)/);
+  if (kind === 'sleep' && n) return {...r, sleep:Math.min(14, +n[1]), skip:false};
+  if (kind === 'meal') return {...r, meals:[{when, name:mealName(s) || s}], skip:false};
+  if (kind === 'move') return {...r, moves:[{type:'운동', min:Math.max(5, Math.min(300, +(s.match(/(\d+)\s*분/)?.[1] ?? 30)))}], skip:false};
+  return {...r, skip:false};
 }
 const isEmptyParse = r => r.sleep == null && !r.moves.length && !r.meals.length && !r.mood && !r.rest;
 

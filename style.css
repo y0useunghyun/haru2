@@ -371,9 +371,6 @@ dialog{background:var(--bg);border:2px solid var(--ink);border-bottom:0}
 .chat__log > :first-child{margin-top:auto}   /* 적을 땐 아래부터 */
 .msg{max-width:80%;margin:0;padding:6px 10px;border:2px solid #3B2A20;border-radius:3px;background:#fff;color:#3B2A20;font-size:14px;line-height:1.4;align-self:flex-start;box-shadow:2px 2px 0 rgba(59,42,32,.25);overflow-wrap:anywhere}
 .msg--me{align-self:flex-end;background:#FFF3C4}
-.chat__quick{flex:none;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:0 2px 3px 0}
-.chat__quick[hidden]{display:none}
-.quick{flex:none;min-height:34px;padding:0 12px;font-size:14px}
 .chat .say{flex:none;margin-top:0}
 .chat .say__in{height:44px}
 .chat .say__go{width:44px;height:44px}

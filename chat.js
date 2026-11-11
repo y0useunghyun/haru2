@@ -3,15 +3,11 @@
 
 const CHAT_MAX = 30;
 const ASK_NEXT_MS = 1500;
-// 질문마다 바로 누를 수 있는 대답. 모두 parseRecord 가 알아듣는 말 (check.js 에서 확인)
-const QUICK = {
-  mood:MOODS.map(([, label]) => label),
-  sleep:['6시간', '7시간', '8시간', '푹 잤어'],
-  meal:{morning:['토스트', '시리얼', '바나나'], noon:['김밥', '라면', '샐러드'], evening:['밥이랑 국', '파스타', '치킨'], night:['밥이랑 국', '파스타', '치킨']},
-  move:['30분 걸었어', '스트레칭 했어', '아무것도 안 했어'],
-};
+// 질문마다 입력칸에 보이는 예시 (모두 알아듣는 말, check.js 에서 확인)
+const HINT = {mood:'예: 좋아, 그냥 그래', sleep:'예: 7시간', meal:'예: 김밥, 마라탕', move:'예: 30분 걸었어'};
 
-let chat = [], openAsk = null;   // openAsk = 마지막으로 물어본 것 (mood·sleep·meal·move)
+let chat = [], openAsk = null, skipped = [];   // openAsk = 마지막으로 물어본 것 (mood·sleep·meal·move), skipped = 「아니」라고 한 질문 (이번에 연 동안만)
+const skipAsk = kind => { if (kind) skipped = [...skipped, kind]; openAsk = null; };
 
 function chatPush(me, t){
   if (!t) return;
@@ -25,22 +21,12 @@ function chatAsk(){
   openAsk = q.kind;
   chatPush(false, q.t);
 }
-function quickFor(kind){
-  if (kind === 'meal') return QUICK.meal[timeOf(hourNow())];
-  return QUICK[kind] ?? [];
-}
 function drawChat(){
-  $('chatLog').innerHTML = chat.map(m => `<p class="msg ${m.me ? 'msg--me' : ''}">${esc(m.t)}</p>`).join('');
+  const log = $('chatLog'), html = chat.map(m => `<p class="msg ${m.me ? 'msg--me' : ''}">${esc(m.t)}</p>`).join('');
+  if (log.innerHTML !== html){ log.innerHTML = html; log.scrollTop = log.scrollHeight; }
   const still = openAsk && askNow()?.kind === openAsk;
-  $('chatQuick').innerHTML = still ? quickFor(openAsk).map(t => `<button type="button" class="chip quick" data-quick="${esc(t)}">${esc(t)}</button>`).join('') : '';
-  $('chatQuick').hidden = !still;
-  $('chatLog').scrollTop = $('chatLog').scrollHeight;   // 빠른 대답 줄이 생긴 뒤에 맨 아래로
+  $('sayInput').placeholder = still ? HINT[openAsk] : `${state.name || '캐릭터'}에게 말해 주기…`;
 }
-$('chatQuick').onclick = e => {
-  const b = e.target.closest('[data-quick]'); if (!b) return;
-  $('sayInput').value = b.dataset.quick;
-  $('sayForm').requestSubmit();
-};
 // 대답이 다 끝나면 다음 질문
 const askAfter = ms => setTimeout(chatAsk, ms + ASK_NEXT_MS);
 

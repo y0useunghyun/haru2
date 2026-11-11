@@ -187,11 +187,11 @@ function worldLines(){   // 날씨·계절. 밤에 맑음·흐림이면 계절
   return timeOf(hourNow()) === 'night' && (weather === 'clear' || weather === 'cloud') ? W.season[seasonOf(TODAY)] : Math.floor(talk / 8) % 2 ? W.weather[weather] : W.season[seasonOf(TODAY)];
 }
 function askNow(){   // 아직 안 남긴 것: 기분 → 잠 → 식사 → 운동 순 (대화창 chat.js 도 씀)
-  const d = todayRec(), A = ASK[register()], time = timeOf(hourNow());
-  if (!d.mood) return {kind:'mood', t:A.mood};
-  if (d.sleep == null && time !== 'night') return {kind:'sleep', t:A.sleep};
-  if (!d.meals.length) return {kind:'meal', t:A.meal[time]};
-  if (!d.moves.length && !d.rest && time !== 'morning') return {kind:'move', t:A.move};
+  const d = todayRec(), A = ASK[register()], time = timeOf(hourNow()), no = k => skipped.includes(k);
+  if (!d.mood && !no('mood')) return {kind:'mood', t:A.mood};
+  if (d.sleep == null && time !== 'night' && !no('sleep')) return {kind:'sleep', t:A.sleep};
+  if (!d.meals.length && !no('meal')) return {kind:'meal', t:A.meal[time]};
+  if (!d.moves.length && !d.rest && time !== 'morning' && !no('move')) return {kind:'move', t:A.move};
   return null;
 }
 function speech(act){
@@ -272,7 +272,7 @@ function gainItem(key){
   return true;
 }
 function drawPanel(){
-  $('sayInput').placeholder = `${state.name || '캐릭터'}에게 말해 주기…`;
+  if (typeof drawChat === 'function') drawChat();   // 질문이 바뀌면 입력칸 예시도 (chat.js)
 }
 function render(){
   const act = nowActivity();
@@ -314,7 +314,8 @@ $('sayForm').onsubmit = e => {
   e.preventDefault();
   const text = $('sayInput').value.trim(); if (!text) return;
   chatPush(true, text);
-  const r = parseRecord(text, guessWhen());
+  const r = parseAnswer(text, openAsk, guessWhen());
+  if (r.skip){ $('sayInput').value = ''; const t = pick(lines().rest); skipAsk(openAsk); say(t); chatPush(false, t); askAfter(0); render(); return; }
   if (isEmptyParse(r)){ $('sayInput').value = ''; say(WHAT[register()], 5000); chatPush(false, WHAT[register()]); render(); hop(); return; }
   const before = todayRec(), L = lines();
   setToday({
