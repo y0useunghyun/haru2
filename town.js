@@ -126,7 +126,7 @@ function drawShop(){   // 오늘의 물건은 공짜로 하나 + 코인으로 �
   if (state.shopDay === TODAY) free = '<p class="sub">오늘 물건은 받아 왔어요. 내일 또 들러요</p>';
   else if (key){ const {p, k, name} = itemOf(key);
     free = `<p class="sub" style="margin-top:-8px">오늘의 물건 · 공짜</p>
-      <div class="shop-item"><span class="pcard__img">${kindArt(p, k)}</span><b>${esc(name)} ${p.name}</b></div>
+      <div class="shop-item"><span class="pcard__img">${kindArt(p, k)}</span><b>${esc(itemOf(key).label)}</b></div>
       <button type="button" class="primary" id="shopTake">받아 오기</button>`; }
   $('shopBody').innerHTML = free + shopBuyList();
 }
@@ -143,7 +143,7 @@ $('shopBody').onclick = e => {
 function drawBoard(){
   const news = [...NEWS[seasonOf(TODAY)], ...NEWS.all];
   const meets = recentMeets(7).map(x => ({date:x.date, who:`${esc(state.name)} · ${esc(x.f.room.name)}`, text:x.ev.feed}));
-  const mail = state.mail.map(m => ({date:m.date, who:esc(m.from), text:GREETS[m.greet] + (m.item ? ` · 선물 ${esc(itemOf(m.item).name)} ${itemOf(m.item).p.name}` : '')}));
+  const mail = state.mail.map(m => ({date:m.date, who:esc(m.from), text:GREETS[m.greet] + (m.item ? ` · 선물 ${esc(itemOf(m.item).label)}` : '')}));
   const feed = [...meets, ...mail].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 30);
   $('boardBody').innerHTML = `<p class="life" style="margin-top:0">${news[hash(TODAY) % news.length]}</p>
     <p class="sec">마을 소식</p>
@@ -252,7 +252,7 @@ function takeGift({data, id}){
   if (state.mail.some(m => m.id === id)) return showToast('이미 받은 인사예요');
   state = {...state, mail:[...state.mail, {id, from:data.from, greet:data.greet, item:data.item, date:TODAY}].slice(-100)};
   const isNew = data.item ? gainItem(data.item) : false;
-  const gift = data.item ? ` · 선물 ${itemOf(data.item).name} ${itemOf(data.item).p.name}${isNew ? '' : ' (이미 있어서 마음만 받았어요)'}` : '';
+  const gift = data.item ? ` · 선물 ${itemOf(data.item).label}${isNew ? '' : ' (이미 있어서 마음만 받았어요)'}` : '';
   showToast(`${data.from}: ${GREETS[data.greet]}${gift}`);
   say(GIFT_LINE[register()](data.from), 4000); render(); hop();
 }

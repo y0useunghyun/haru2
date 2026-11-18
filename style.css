@@ -461,3 +461,7 @@ dialog .toast{position:absolute;bottom:24px}   /* 열린 창 안에서는 그 �
 #editOk .price .coin__img{width:16px;height:16px}
 .edit__have{font-weight:500;font-size:13px;opacity:.7}
 .opt--lock[aria-pressed=true]{opacity:1}   /* 입어 보는 중 */
+/* 가게: 두 번 눌러 사기 */
+.buy[aria-pressed=true]{background:#FFF3C4}
+.buy__again{font-size:11px;font-weight:700;color:#C8461F}
+.shop-look{margin-top:16px}

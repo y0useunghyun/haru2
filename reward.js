@@ -58,34 +58,34 @@ function coinPop(n){
 }
 $('coinPill').onclick = () => { drawShop(); $('shopSheet').showModal(); };   // town.js
 
-// ── 가게: 코인으로 사기 (가구·꾸미기) ──
-const lockedLooks = () => Object.entries(LOOK_LOCKED).flatMap(([k, is]) => is.map(i => [k, i])).filter(([k, i]) => !lookOwned(state, k, i));
+// ── 가게: 코인으로 가구·소품 사기. 꾸미기는 꾸미기 창에서 입어 보고 산다 (app.js) ──
+// 한 번 누르면 그 카드가 「한 번 더 누르면 사요」, 두 번째에 산다 (스크롤하다 잘못 눌러도 코인이 안 빠지게)
 const price = n => `<span class="price">${COIN_IMG}${n}</span>`;
-function lookCard(k, i){
-  const part = PARTS.find(p => p.k === k);
-  const art = part.colors ? `<span class="swatch" style="background:${part.colors[i]}"></span>` : avatar({...state.look, [k]:i}, {crop:part.crop || 'face'});
-  return `<button type="button" class="pcard buy" data-buy="look" data-k="${k}" data-i="${i}"><span class="pcard__img">${art}</span><b>${part.label}</b>${price(PRICE.look)}</button>`;
-}
+let shopPick = null;
 function shopBuyList(){
-  const props = ALL_ITEMS.filter(key => !owned().has(key));
-  const looks = lockedLooks();
-  if (!props.length && !looks.length) return '<p class="sec">코인으로 사기</p><p class="sub">다 모았어요</p>';
+  const free = state.shopDay === TODAY ? null : shopItem(state, TODAY);   // 오늘 공짜인 건 코인 목록에서 뺌
+  const props = ALL_ITEMS.filter(key => !owned().has(key) && key !== free);
+  const looks = PARTS.some(p => Array.from({length:partSize(p)}, (_, i) => i).some(i => !lookOwned(state, p.k, i)));
   return `<p class="sec shop-coins">코인으로 사기 ${price(state.coins)}</p>
-    <p class="sub" id="shopMsg">매일 들르고 이야기하면 코인이 모여요</p>
-    ${looks.length ? `<p class="cal-sub">꾸미기</p><div class="props-grid">${looks.map(([k, i]) => lookCard(k, i)).join('')}</div>` : ''}
-    ${props.length ? `<p class="cal-sub">가구·소품</p><div class="props-grid">${props.map(key => { const {p, k, name} = itemOf(key);
-      return `<button type="button" class="pcard buy" data-buy="prop" data-key="${key}"><span class="pcard__img">${kindArt(p, k)}</span><b>${esc(name)}</b>${price(PRICE.prop)}</button>`; }).join('')}</div>` : ''}`;
+    <p class="sub">매일 들르고 이야기하면 코인이 모여요</p>
+    ${props.length ? `<div class="props-grid">${props.map(key => { const {p, k, label} = itemOf(key), on = key === shopPick;
+      return `<button type="button" class="pcard buy" data-buy="${key}" ${on ? 'aria-pressed="true"' : ''}><span class="pcard__img">${kindArt(p, k)}</span><b>${esc(label)}</b>${on ? '<span class="buy__again">한 번 더 누르면 사요</span>' : price(PRICE.prop)}</button>`; }).join('')}</div>`
+      : '<p class="sub">가구·소품을 다 모았어요</p>'}
+    ${looks ? '<button type="button" class="chip shop-look" id="shopLook">머리·옷은 꾸미기에서 입어 보고 사요 ›</button>' : ''}`;
 }
 $('shopBody').addEventListener('click', e => {
+  if (e.target.closest('#shopLook')){ $('shopSheet').close(); return openEdit('캐릭터 꾸미기'); }
   const b = e.target.closest('[data-buy]'); if (!b) return;
-  const cost = PRICE[b.dataset.buy];
-  if (state.coins < cost){ $('shopMsg').textContent = `코인이 ${cost - state.coins}개 모자라요. 내일 또 들러요`; return; }
-  state = {...state, coins:state.coins - cost};
-  if (b.dataset.buy === 'prop') gainItem(b.dataset.key);   // app.js: 갖기 + 알림
-  else state = {...state, looks:[...state.looks, `${b.dataset.k}:${b.dataset.i}`]};
+  const key = b.dataset.buy;
+  if (shopPick !== key){ shopPick = key; return drawShop(); }
+  shopPick = null;
+  if (state.coins < PRICE.prop){ drawShop(); return showToast(`코인이 ${PRICE.prop - state.coins}개 모자라요. 내일 또 들러요`); }
+  state = {...state, coins:state.coins - PRICE.prop};
+  gainItem(key);   // app.js: 갖기 + 방 알림
   drawShop(); render();
-  $('shopMsg').textContent = b.dataset.buy === 'prop' ? '샀어요! 방 꾸미기에서 바꿔 봐요' : '샀어요! 캐릭터 꾸미기에서 입혀 봐요';
+  showToast(`${itemOf(key).label} 샀어요! 방 꾸미기에서 바꿔 봐요`);   // 열린 가게 안 아래쪽에 (스크롤 위치와 상관없이 보임)
 });
+$('shopSheet').addEventListener('close', () => { shopPick = null; });
 
 // ── 캐릭터 페이지: 함께한 단계 ──
 function rewardSection(){

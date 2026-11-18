@@ -112,7 +112,9 @@ function shopItem(c, today){
   const owned = ownedItems(c, today), left = ALL_ITEMS.filter(k => !owned.has(k));
   return left.length ? left[hash(`${c.seed}|shop|${today}`) % left.length] : null;
 }
-const itemOf = key => { const [id, k] = key.split(':'); const p = PROPS.find(x => x.id === id); return {p, k:+k, name:p.kinds[+k]}; };
+const BARE_PROPS = ['books', 'desktop'];   // 「책 소품」「어항 책상 위」처럼 어색해서 종류 이름만
+const itemLabel = (p, name) => (BARE_PROPS.includes(p.id) || name.includes(p.name) || /램프$/.test(name) ? name : `${name} ${p.name}`);
+const itemOf = key => { const [id, k] = key.split(':'); const p = PROPS.find(x => x.id === id); return {p, k:+k, name:p.kinds[+k], label:itemLabel(p, p.kinds[+k])}; };
 
 // ── 공원에서 줍는 것: 계절마다 둘, 날짜로 하나 (미연시처럼 「주워 간다/그냥 둔다」) ──
 const PICKS = {
