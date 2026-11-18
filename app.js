@@ -254,7 +254,7 @@ function say(text, ms = 3500){
 }
 
 let lastSceneKey = '', lastCharKey = '', currentGo = null;
-const GO_HINT = {say:'대답하기 ›', meal:'먹은 거 적기 ›', park:'공원 가기 ›'};
+const GO_HINT = {meal:'먹은 거 적기 ›', park:'공원 가기 ›'};   // 질문(say)은 아래 입력창이 있어서 안 적음
 function drawScene(){
   const key = JSON.stringify([timeOf(hourNow()), weather, myKinds(), state.picks.length]);
   if (key !== lastSceneKey){ $('sceneBase').innerHTML = sceneBase(); lastSceneKey = key; }
@@ -315,7 +315,7 @@ function render(){
   drawScene(); drawActor(act); drawPanel();
   const s = speech(act);
   currentGo = s.go ?? null;
-  $('bubble').innerHTML = esc(s.t) + (s.go ? `<span class="bubble__go">${GO_HINT[s.go]}</span>` : '');   // 누르기 전에 어디로 가는지 보이게
+  $('bubble').innerHTML = esc(s.t) + (GO_HINT[s.go] ? `<span class="bubble__go">${GO_HINT[s.go]}</span>` : '');   // 누르기 전에 어디로 가는지 보이게
   $('bubble').classList.toggle('is-link', !!s.go);
   Object.keys(PAGES).forEach(id => { if ($(id).open) PAGES[id](); });
   if ($('rec').open) drawRec();
