@@ -453,3 +453,7 @@ dialog .toast{position:absolute;bottom:24px}   /* 열린 창 안에서는 그 �
 .letter .sub{margin-bottom:10px}
 .letter__sign{text-align:right}
 #guest .char{padding:0;border:0;background:none;cursor:pointer}
+/* 홈 화면 추가 안내 (title.js, 아이폰 Safari 에서만) */
+.title__home{display:block;margin:10px auto 0;font-size:12px;text-decoration:underline;text-underline-offset:3px}
+.title__home[hidden],.title__how[hidden]{display:none}
+.title__how{margin:8px 0 0;font-size:12px;line-height:1.6;text-align:center;color:var(--text-2)}

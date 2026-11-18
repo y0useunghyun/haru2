@@ -63,7 +63,13 @@ function titleArt(){
 function openTitle(){
   $('titleArt').innerHTML = `${pxImg(titleArt(), 'scene-img')}<div class="actor actor--static" style="--x:30;--y:97"><div class="char">${avatar(DEFAULT_LOOK)}</div></div>`;
   $('titleLogo').innerHTML = pxImg(logoImage(), 'title__logo-img');
+  $('titleHome').hidden = !needsHomeScreen();
   $('title').showModal();
 }
 $('titleGo').onclick = () => { $('title').close(); drawFirst(); $('first').showModal(); $('firstBody').querySelector('.vn__t')?.focus(); };   // showModal 이 「건너뛰기」에 포커스를 주지 않게
+// 아이폰 Safari 에서만: 홈 화면 앱은 Safari 와 저장 공간이 따로라, 첫 시작 전에 권함 (확인: ?ios)
+const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isStandalone = () => navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+const needsHomeScreen = () => (isIOS || params.has('ios')) && !isStandalone();
+$('titleHome').onclick = () => { $('titleHow').hidden = !$('titleHow').hidden; window.clarity?.('event', 'home_hint'); };
 $('title').oncancel = e => e.preventDefault();   // Esc 로 닫으면 빈 화면이 되니 막음

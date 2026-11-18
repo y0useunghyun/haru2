@@ -4,7 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>하루 2</title>
-<link rel="icon" href="data:,">
+<link rel="icon" href="icon-192.png">
+<!-- 홈 화면 앱: 아이폰 Safari 는 7일 안 들어오면 저장값을 지우지만, 홈 화면에 추가한 앱은 예외 -->
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="하루">
+<meta name="theme-color" content="#FFC93C">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri@2.40.3/dist/galmuri.css">
@@ -55,6 +62,8 @@ if (location.protocol === 'https:') (function(c,l,a,r,i,t,y){
   <div class="title__art" id="titleArt" aria-hidden="true"></div>
   <p class="title__sub"><b>오늘 뭐 했는지,<br>작은 친구가 먼저 물어봐요</b><br>한 줄만 대답하면 하루가 쌓여요</p>
   <button type="button" class="primary title__go" id="titleGo">시작하기</button>
+  <button type="button" class="link title__home" id="titleHome" hidden>홈 화면에 추가하고 시작하면 기록이 오래 남아요</button>
+  <p class="title__how" id="titleHow" hidden>아래 <b>공유 버튼</b> → <b>홈 화면에 추가</b>,<br>그다음 홈 화면의 <b>하루</b>로 열어 주세요</p>
 </div></dialog>
 
 <dialog id="letter"><form class="sheet" method="dialog">
