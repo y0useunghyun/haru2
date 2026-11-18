@@ -457,3 +457,7 @@ dialog .toast{position:absolute;bottom:24px}   /* 열린 창 안에서는 그 �
 .title__home{display:block;margin:10px auto 0;font-size:12px;text-decoration:underline;text-underline-offset:3px}
 .title__home[hidden],.title__how[hidden]{display:none}
 .title__how{margin:8px 0 0;font-size:12px;line-height:1.6;text-align:center;color:var(--text-2)}
+#editOk .price{font-size:inherit}
+#editOk .price .coin__img{width:16px;height:16px}
+.edit__have{font-weight:500;font-size:13px;opacity:.7}
+.opt--lock[aria-pressed=true]{opacity:1}   /* 입어 보는 중 */

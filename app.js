@@ -561,15 +561,30 @@ $('meal').onclose = () => {
 let draft = state.look, tab = 'hair', onEditClose = null;
 function drawEdit(){
   $('preview').innerHTML = avatar(draft);
+  drawEditOk();
   $('tabs').innerHTML = PARTS.map(p => `<button type="button" class="tab" role="tab" aria-selected="${p.k === tab}" data-tab="${p.k}">${p.label}</button>`).join('');
   const p = PARTS.find(x => x.k === tab), n = partSize(p);
   $('opts').innerHTML = Array.from({length:n}, (_, i) => { const lock = !lookOwned(state, p.k, i);   // 잠금은 가게에서 (reward.js)
-    return `<button type="button" class="opt ${p.colors ? '' : 'thumb'} ${lock ? 'opt--lock' : ''}" aria-pressed="${draft[p.k] === i}" data-opt="${i}" ${lock ? 'data-lock' : ''} aria-label="${p.label} ${i + 1}${lock ? ', 가게에서 살 수 있어요' : ''}">
+    return `<button type="button" class="opt ${p.colors ? '' : 'thumb'} ${lock ? 'opt--lock' : ''}" aria-pressed="${draft[p.k] === i}" data-opt="${i}" ${lock ? 'data-lock' : ''} aria-label="${p.label} ${i + 1}${lock ? `, 코인 ${PRICE.look}개` : ''}">
       ${p.colors ? `<span class="swatch" style="background:${p.colors[i]}"></span>` : avatar({...draft, [p.k]:i}, {crop:p.crop || 'face'})}${lock ? `<span class="opt__price">${COIN_IMG}${PRICE.look}</span>` : ''}
     </button>`; }).join('');
 }
 $('tabs').onclick = e => { const b = e.target.closest('[data-tab]'); if (b){ tab = b.dataset.tab; drawEdit(); } };
-$('opts').onclick = e => { const b = e.target.closest('[data-opt]'); if (!b) return; if (b.hasAttribute('data-lock')) return showToast('가게에서 코인으로 살 수 있어요'); draft = {...draft, [tab]:+b.dataset.opt}; drawEdit(); };
+$('opts').onclick = e => { const b = e.target.closest('[data-opt]'); if (!b) return; draft = {...draft, [tab]:+b.dataset.opt}; drawEdit(); };   // 잠긴 것도 입어 보고 아래 버튼으로 산다
+// 입어 본 것 중 아직 안 산 것 → 버튼이 「코인 n개로 사서 입기」
+const unpaid = () => PARTS.filter(p => !lookOwned(state, p.k, draft[p.k])).map(p => `${p.k}:${draft[p.k]}`);
+function drawEditOk(){
+  const n = unpaid().length, cost = n * PRICE.look;
+  $('editOk').innerHTML = !n ? '이렇게 할게요' : `${price(cost)} 사서 입기 <span class="edit__have">(가진 코인 ${state.coins})</span>`;
+}
+$('editOk').onclick = e => {
+  const buy = unpaid(), cost = buy.length * PRICE.look;
+  if (!buy.length) return;
+  e.preventDefault();
+  if (state.coins < cost) return showToast(`코인이 ${cost - state.coins}개 모자라요. 매일 들르면 모여요`);
+  state = {...state, coins:state.coins - cost, looks:[...state.looks, ...buy]};
+  $('edit').close('ok');
+};
 $('rand').onclick = () => { draft = Object.fromEntries(PARTS.map(p => { const ok = Array.from({length:partSize(p)}, (_, i) => i).filter(i => lookOwned(state, p.k, i)); return [p.k, ok[Math.floor(Math.random()*ok.length)]]; })); drawEdit(); };
 function openEdit(title, then = null){
   draft = state.look; onEditClose = then; $('editTitle').textContent = title;
