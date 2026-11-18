@@ -350,6 +350,7 @@ function reactAfter(before, after, first = []){
 $('sayForm').onsubmit = async e => {
   e.preventDefault();
   const text = $('sayInput').value.trim(); if (!text || aiBusy) return;
+  window.clarity?.('event', 'chat_send');   // 보낸 횟수 (잡담 포함). 기록으로 알아들은 것만은 record_line
   chatPush(true, text);
   const answer = t => { $('sayInput').value = ''; say(t); chatPush(false, t); askAfter(0); render(); hop(); };
   const small = isEmptyParse(parseRecord(text, guessWhen())) && chitchatLine(text);   // 기록이 아닌 말이면 질문의 대답으로 받기 전에 잡담으로 (「안녕」이 음식이 되지 않게)
