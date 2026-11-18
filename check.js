@@ -164,3 +164,33 @@ for (const t of Object.values(run('SLEEP_ACK')).flatMap(Object.values)) assert.o
 for (const t of Object.values(run('PLAY_TALK')).flatMap(Object.values)) assert.ok(!/\?\s*$/.test(t), t);
 for (const t of Object.values(run('FRIEND_THANKS')).flatMap(Object.values)) assert.ok(!/\?\s*$/.test(t), t);
 console.log('check.js ok');
+
+// ── 다시 오면 달라져 있는 것 ──
+const N = run('({recallLine, letterOf, letterCount, guestOn, meetingOn})');
+const rec = (o = {}) => ({mood:null, rest:false, sleep:null, moves:[], meals:[], ...o});
+const me2 = {seed:777, name:'콩이', personality:'calm', born:'2026-11-01', interests:[{id:'read', on:'2026-11-01'}, {id:'plant', on:'2026-11-04'}], picks:[{id:'maple', date:'2026-11-03'}], days:{}};
+// 지난 기록이 없거나 7일보다 오래되면 꺼내지 않음, 어제면 「어제」
+assert.strictEqual(N.recallLine(me2, '2026-11-18', 'polite'), null);
+assert.strictEqual(N.recallLine({...me2, days:{'2026-11-05':rec({meals:[{when:'점심', name:'김밥'}]})}}, '2026-11-18', 'polite'), null);
+assert.strictEqual(N.recallLine({...me2, days:{'2026-11-17':rec({meals:[{when:'점심', name:'김밥'}]})}}, '2026-11-18', 'polite'), '어제 김밥 먹었다고 했죠. 그 얘기 듣고 배고팠어요');
+assert.ok(N.recallLine({...me2, days:{'2026-11-14':rec({sleep:5.5})}}, '2026-11-18', 'casual').startsWith('저번에 5시간 반밖에'));
+// 잠은 적게 잔 날만, 보통 기분은 꺼내지 않음 (평가 X)
+assert.strictEqual(N.recallLine({...me2, days:{'2026-11-17':rec({sleep:7, mood:'soso'})}}, '2026-11-18', 'casual'), null);
+// 편지: 7일마다, 그 주 이야기만. 안 남긴 주엔 내 기록 줄 없음
+assert.strictEqual(N.letterCount(me2, '2026-11-07'), 0);
+assert.strictEqual(N.letterCount(me2, '2026-11-15'), 2);
+const l1 = N.letterOf({...me2, days:{'2026-11-02':rec({meals:[{when:'점심', name:'김밥'}], mood:'good'}), '2026-11-03':rec({meals:[{when:'저녁', name:'김밥'}]})}}, 1, 'polite');
+eq([l1.from, l1.to], ['2026-11-01', '2026-11-07']);
+assert.ok(l1.lines[0] === '콩이예요.' && l1.lines.at(-1) === '다음 주에도 여기 있을게요.');
+assert.ok(l1.lines.includes('요즘은 식물 돌보기가 좋아졌어요.') && l1.lines.includes('공원에서 단풍잎을 주워서 병에 넣었어요.'));
+assert.ok(l1.lines.includes('김밥 이야기를 자주 들었어요. 저도 먹어 보고 싶어요.') && l1.lines.includes('좋았다고 말해 준 날, 저도 같이 좋았어요.'));
+const l2 = N.letterOf(me2, 2, 'casual');
+assert.ok(!l2.lines.some(t => /얘기|이야기를|말해 준/.test(t)), '기록 없는 주에 내 기록 이야기를 하면 안 됨');
+// 친구 방문: 친구가 된 날엔 안 옴, 만나는 날과 겹치지 않음, 같은 날짜면 늘 같은 결과
+const fr = [{at:'2026-11-01', room:{seed:4242, born:'2026-10-01', name:'모모'}}];
+const days30 = Array.from({length:60}, (_, i) => run(`addDays('2026-11-02', ${i})`));
+const visits = days30.filter(d => N.guestOn(me2, fr, d));
+assert.ok(visits.length > 3 && visits.length < 30, `방문 ${visits.length}일`);
+assert.ok(visits.every(d => !N.meetingOn(me2, fr[0].room, d)));
+assert.strictEqual(N.guestOn(me2, fr, '2026-11-01'), null);
+console.log('다시 오기 검사 통과');

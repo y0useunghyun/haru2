@@ -70,6 +70,10 @@ function normalize(raw){
     looks:[...new Set([...cleanList(raw.looks, 20, x => (typeof x === 'string' && /^(hair|hairColor|outfit|shirt):\d$/.test(x) ? x : null)), ...worn])],
     levelSeen:Number.isInteger(raw.levelSeen) ? raw.levelSeen : -1,
     playDay:isDateKey(raw.playDay) ? raw.playDay : null,   // 오늘 놀이 했는지 (play.js)
+    recallDay:isDateKey(raw.recallDay) ? raw.recallDay : null,   // 오늘 지난 기록을 꺼냈는지 (chat.js)
+    letterSeen:Number.isInteger(raw.letterSeen) && raw.letterSeen >= 0 ? raw.letterSeen : 0,   // 읽은 편지 번호 (letter.js)
+    snows:cleanList(raw.snows, 20, k => (isDateKey(k) ? k : null)),   // 겨울마다 첫눈 온 날
+    guests:cleanList(raw.guests, 30, x => (Number.isInteger(x?.s) && isDateKey(x.on) ? {s:x.s, on:x.on} : null)),   // 친구 캐릭터가 처음 놀러 온 날
     savedAt:typeof raw.savedAt === 'string' && !isNaN(Date.parse(raw.savedAt)) ? raw.savedAt : null,   // 서버와 비교용 (cloud.js)
     cloudUid:typeof raw.cloudUid === 'string' && /^[0-9a-f-]{36}$/.test(raw.cloudUid) ? raw.cloudUid : null,
     days,
@@ -170,6 +174,7 @@ async function loadWeather(){
     const code = (await res.json()).current?.weather_code;
     if (!Number.isInteger(code)) throw new Error('날씨 코드 없음');
     weather = WEATHER_CODES.find(([codes]) => codes.includes(code))?.[1] ?? 'rain';
+    if (typeof checkFirstSnow === 'function') checkFirstSnow();   // letter.js
     render();
   } catch (err){ console.warn('날씨를 받지 못해 시간대만 반영', err); }   // 창문은 맑은 하늘로 유지
 }
@@ -236,6 +241,7 @@ function speech(act){
   if (talk % 3 === 0){ const q = askNow(); if (q) return {t:q.t, go:'say'}; }
   const met = recentMeets(3)[0];   // 친구 캐릭터와 만난 이야기 (town.js)
   if (talk % 7 === 6 && met) return {t:meetLine(met)};
+  if (talk % 5 === 4 && typeof guestTalk === 'function' && guestTalk()) return {t:guestTalk()};   // 친구가 놀러 옴 (letter.js)
   if (talk % 8 === 2) return {t:pick(worldLines())};
   if (talk % 9 === 5) return {t:pick(DEEP[register()][Math.min(levelOf(state), DEEP[register()].length - 1)])};   // 함께한 단계 = 레벨
   if (talk % 3 === 1){ const s = statusLine(); if (s) return s; }
@@ -248,6 +254,7 @@ function say(text, ms = 3500){
 }
 
 let lastSceneKey = '', lastCharKey = '', currentGo = null;
+const GO_HINT = {say:'대답하기 ›', meal:'먹은 거 적기 ›', park:'공원 가기 ›'};
 function drawScene(){
   const key = JSON.stringify([timeOf(hourNow()), weather, myKinds(), state.picks.length]);
   if (key !== lastSceneKey){ $('sceneBase').innerHTML = sceneBase(); lastSceneKey = key; }
@@ -300,6 +307,7 @@ function gainItem(key){
 function drawPanel(){
   if (typeof drawCoin === 'function') drawCoin();   // reward.js
   if (typeof drawChat === 'function') drawChat();   // 질문이 바뀌면 입력칸 예시도 (chat.js)
+  if (typeof drawGuest === 'function') drawGuest();   // 놀러 온 친구 (letter.js)
 }
 function render(){
   const act = nowActivity();
@@ -307,7 +315,7 @@ function render(){
   drawScene(); drawActor(act); drawPanel();
   const s = speech(act);
   currentGo = s.go ?? null;
-  $('bubble').textContent = s.t;
+  $('bubble').innerHTML = esc(s.t) + (s.go ? `<span class="bubble__go">${GO_HINT[s.go]}</span>` : '');   // 누르기 전에 어디로 가는지 보이게
   $('bubble').classList.toggle('is-link', !!s.go);
   Object.keys(PAGES).forEach(id => { if ($(id).open) PAGES[id](); });
   if ($('rec').open) drawRec();
@@ -661,6 +669,9 @@ function memoriesOf(){
     ...state.friends.map(f => [f.at, `${esc(f.room.name)}네 방에 처음 놀러 간 날`]),
     ...state.friends.map(f => [firstMeet(f), `${esc(withRang(f.room.name))} 마을에서 처음 만난 날`]).filter(([d]) => d),
     ...[...firstGift].map(([from, d]) => [d, `${esc(from)}에게 인사를 받은 날`]),
+    ...state.snows.map(d => [d, '첫눈을 같이 본 날']),
+    ...state.guests.map(g => [g.on, `${esc(josaOf(state.friends.find(f => f.room.seed === g.s)?.room.name ?? '친구', '이', '가'))} 우리 방에 처음 놀러 온 날`]),
+    ...Array.from({length:Math.min(state.letterSeen, 1)}, () => [addDays(state.born, LETTER_DAYS), '첫 편지를 받은 날']),
   ].sort((a, b) => b[0].localeCompare(a[0])).map(([k, t]) => [fmt(k), t]);
 }
 function drawCharPage(){
@@ -672,6 +683,7 @@ function drawCharPage(){
     <p class="sec">${esc(josa(state.name, ['이가', '가']))} 요즘 좋아하는 것</p>
     <div class="chips">${interestsOn(state, TODAY).map(id => `<span class="tag">${INTERESTS[id].label}</span>`).join('')}</div>
     <p class="sub" style="margin-top:8px">방 소품 ${owned().size} / ${ALL_ITEMS.length}</p>
+    ${typeof letterSection === 'function' ? letterSection() : ''}
     <p class="sec">함께한 기억</p>
     ${memoriesOf().map(([d, t]) => `<div class="row"><div class="row__h"><span>${t}</span><span class="num">${d}</span></div></div>`).join('')}
     <p class="sec">설정</p>
@@ -803,6 +815,7 @@ setInterval(checkDay, 60000);
 
 // 시작은 town.js 를 불러온 뒤 (공원·친구 코드가 거기 있음)
 function start(){
+  window.clarity?.('set', 'visit_days', String(Math.min(state.visits.length, 15)));   // 테스트: 몇 번째 들른 사람인지로 녹화 나눠 보기 (15 = 15번 이상)
   render();
   loadWeather();
   cloudStart().catch(err => console.warn('서버 연결 안 됨, 이 기기에만 저장', err));   // cloud.js

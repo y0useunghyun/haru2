@@ -21,7 +21,7 @@ if (location.protocol === 'https:') (function(c,l,a,r,i,t,y){
 <body>
 <main class="app">
   <div class="hd">
-    <button class="deco" id="calBtn">오늘 기록</button>
+    <button class="deco" id="calBtn">달력</button>
     <span class="hd__r"><button class="deco" id="townBtn">마을</button><button class="deco" id="roomBtn">방 꾸미기</button><button class="deco" id="charBtn">캐릭터</button></span>
   </div>
 
@@ -33,6 +33,8 @@ if (location.protocol === 'https:') (function(c,l,a,r,i,t,y){
     </div>
     <button class="note" id="note" aria-label="캐릭터가 남긴 쪽지" hidden></button>
     <button class="bubble" id="bubble" aria-live="polite"></button>
+    <div class="actor actor--static" id="guest" hidden><button type="button" class="char" id="guestChar"></button></div>
+    <p class="bubble bubble--static" id="guestBubble" hidden></p>
     <button type="button" class="coin" id="coinPill" aria-label="코인, 가게 열기"><span id="coinImg"></span><b id="coinN">0</b><i id="coinPlus" aria-hidden="true"></i></button>
   </div>
 
@@ -54,6 +56,12 @@ if (location.protocol === 'https:') (function(c,l,a,r,i,t,y){
   <p class="title__sub"><b>오늘 뭐 했는지,<br>작은 친구가 먼저 물어봐요</b><br>한 줄만 대답하면 하루가 쌓여요</p>
   <button type="button" class="primary title__go" id="titleGo">시작하기</button>
 </div></dialog>
+
+<dialog id="letter"><form class="sheet" method="dialog">
+  <h2 id="letterTitle"></h2>
+  <div class="letter" id="letterBody"></div>
+  <button class="primary" value="ok" id="letterOk">잘 읽었어요</button>
+</form></dialog>
 
 <dialog id="first" class="edit"><div class="edit__in" id="firstBody"></div></dialog>
 
@@ -119,7 +127,7 @@ if (location.protocol === 'https:') (function(c,l,a,r,i,t,y){
 </dialog>
 
 <dialog id="calPage" class="edit"><form method="dialog" class="edit__in">
-  <div class="page__top"><button class="back" value="" aria-label="뒤로">‹</button><h2 tabindex="-1" autofocus>오늘 기록</h2></div>
+  <div class="page__top"><button class="back" value="" aria-label="뒤로">‹</button><h2 tabindex="-1" autofocus>달력</h2></div>
   <div class="page__body" id="calBody"></div>
 </form></dialog>
 
@@ -204,7 +212,7 @@ if (location.protocol === 'https:') (function(c,l,a,r,i,t,y){
   <div class="chips" id="greetChips"></div>
   <p class="sec" style="margin-top:20px">선물 (안 골라도 돼요)</p>
   <div class="props-grid props-grid--4 gift-grid" id="giftGrid"></div>
-  <button type="button" class="primary" id="greetMake">인사 코드 만들기</button>
+  <button type="button" class="primary" id="greetMake">인사 보내기</button>
 </form></dialog>
 
 <dialog id="codeSheet"><form class="sheet" method="dialog">
@@ -231,6 +239,7 @@ if (location.protocol === 'https:') (function(c,l,a,r,i,t,y){
 <script src="chat.js"></script>
 <script src="reward.js"></script>
 <script src="play.js"></script>
+<script src="letter.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="cloud.js"></script>
 <script src="pixel-town.js"></script>

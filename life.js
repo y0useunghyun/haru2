@@ -259,3 +259,56 @@ function earnCoins(c, kind, amount, today, cap = true){
   const got = cap ? Math.max(0, Math.min(amount, COIN.daily - s.earned)) : amount;
   return {state:{...s, coins:s.coins + got, earned:s.earned + (cap ? got : 0), gotKinds:[...s.gotKinds, kind]}, got};
 }
+
+// ── 다시 오면 달라져 있는 것 (letter.js 가 화면, 여기는 계산만) ──
+const RECALL_DAYS = 7;   // 이보다 오래된 기록은 꺼내지 않음
+const hoursText = h => `${Math.floor(h)}시간${h % 1 ? ' 반' : ''}`;
+// 가장 가까운 지난 기록에서 꺼낼 말 하나. 같은 날이면 날짜로 골라 매번 같은 것만 나오지 않게
+function recallLine(c, today, reg){
+  const date = Object.keys(c.days).filter(k => k < today && daysBetween(k, today) <= RECALL_DAYS).sort().at(-1);
+  if (!date) return null;
+  const d = c.days[date], R = RECALL[reg], w = daysBetween(date, today) === 1 ? '어제' : '저번에';
+  const opts = [
+    ...(d.meals.length ? [R.meal.replace('{n}', d.meals.at(-1).name)] : []),
+    ...(d.moves.length ? [R.move.replace('{t}', d.moves[0].type)] : []),
+    ...(d.sleep != null && d.sleep < 6 ? [R.sleep.replace('{h}', hoursText(d.sleep))] : []),
+    ...(d.mood === 'good' || d.mood === 'hard' ? [R[d.mood]] : []),
+  ];
+  return opts.length ? opts[hash(`${c.seed}|recall|${today}`) % opts.length].replace('{w}', w) : null;
+}
+// 편지: 태어난 날부터 7일마다 하나. k번째 편지는 그 전 7일 이야기
+const LETTER_DAYS = 7;
+const letterCount = (c, today) => Math.floor(daysBetween(c.born, today) / LETTER_DAYS);
+function letterOf(c, k, reg, friends = []){
+  const L = LETTER[reg], from = addDays(c.born, (k - 1) * LETTER_DAYS), to = addDays(from, LETTER_DAYS - 1);
+  const dates = Array.from({length:LETTER_DAYS}, (_, i) => addDays(from, i));
+  const inWeek = k_ => k_ >= from && k_ <= to;
+  const acts = [...new Set(dates.map(d => activityFor(c, d, 14)).filter(a => a !== 'nap'))];
+  const past = PAST[reg];
+  const lines = [L.hi(c.name)];
+  if (acts.length >= 2) lines.push(L.week.replace('{a}', past[acts[0]]).replace('{b}', past[acts[1]]));
+  else if (acts.length) lines.push(`${past[acts[0]]}.`);
+  const like = (c.interests ?? []).find(x => inWeek(x.on) && x.on !== c.born);
+  if (like) lines.push(L.like.replace('{l}', josaOf(INTERESTS[like.id].label, '이', '가')));
+  const picks = [...new Set((c.picks ?? []).filter(p => inWeek(p.date)).map(p => PICK_BY_ID[p.id].name))];
+  if (picks.length) lines.push(L.pick.replace('{p}', josaOf(picks.join(', '), '을', '를')));
+  // 내가 나눈 것: 두 줄까지 (음식 → 기분 → 운동). 안 남긴 주엔 아무 말 안 함
+  const days = dates.map(d => c.days[d]).filter(Boolean);
+  const foods = days.flatMap(d => d.meals.map(m => m.name)).reduce((m, n) => ({...m, [n]:(m[n] ?? 0) + 1}), {});
+  const top = Object.keys(foods).sort((a, b) => foods[b] - foods[a])[0];
+  const mine = [
+    ...(top ? [(foods[top] > 1 ? L.food2 : L.food1).replace('{n}', top)] : []),
+    ...(days.some(d => d.mood === 'good') ? [L.good] : days.some(d => d.mood === 'hard') ? [L.hard] : []),
+    ...(days.find(d => d.moves.length) ? [L.move.replace('{t}', days.find(d => d.moves.length).moves[0].type)] : []),
+  ].slice(0, 2);
+  lines.push(...mine);
+  const met = friends.flatMap(f => dates.filter(d => d >= f.at).map(d => ({f, ev:meetingOn(c, f.room, d)}))).find(x => x.ev);
+  if (met) lines.push(`${met.ev.past[reg].replace('{r}', withRang(met.f.room.name))}.`);
+  lines.push(L.bye);
+  return {from, to, lines};
+}
+// 친구 캐릭터가 내 방에 놀러 오는 날: 친구가 된 다음 날부터, 마을에서 만나는 날은 빼고. 방향이 있는 값이라 서로 같은 날 오지는 않음
+const GUEST_PERCENT = 25;
+function guestOn(c, friends, date){
+  return friends.find(f => f.at < date && !meetingOn(c, f.room, date) && hash(`${f.room.seed}|guest|${c.seed}|${date}`) % 100 < GUEST_PERCENT) ?? null;
+}

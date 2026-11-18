@@ -127,3 +127,26 @@ const deepStage = days => DEEP_STAGES.filter(d => days >= d).length;
 const joinLines = (a, b) => Array.isArray(a) ? [...a, ...b]
   : Object.fromEntries(Object.keys({...a, ...b}).map(k => [k, b[k] ? joinLines(a[k] ?? [], b[k]) : a[k]]));
 for (const p of Object.keys(MORE_LINES)) LINES[p] = joinLines(LINES[p], MORE_LINES[p]);
+
+// ── 다시 오면 달라져 있는 것 (letter.js) ──
+// 지난 기록 꺼내기: 가장 가까운 지난 기록 하나를 하루 한 번. {w} = 어제·저번에, 사실만 (평가 X, 부재 언급 X)
+const RECALL = {
+  casual:{meal:'{w} {n} 먹었다고 했지? 나 그 얘기 듣고 배고팠어', move:'{w} {t} 했다고 했지? 나도 따라 해 봤어',
+    sleep:'{w} {h}밖에 못 잤다고 해서 계속 생각났어', good:'{w} 기분 좋다고 했잖아. 나도 그 말 듣고 좋았어', hard:'{w} 힘들다고 했잖아. 계속 마음에 남아 있었어'},
+  polite:{meal:'{w} {n} 먹었다고 했죠. 그 얘기 듣고 배고팠어요', move:'{w} {t} 했다고 했죠. 저도 따라 해 봤어요',
+    sleep:'{w} {h}밖에 못 잤다고 해서 계속 생각났어요', good:'{w} 기분 좋다고 했죠. 저도 그 말 듣고 좋았어요', hard:'{w} 힘들다고 했죠. 계속 마음에 남아 있었어요'},
+};
+// 일주일마다 편지. 한 주에 있었던 일만 (안 남긴 주엔 캐릭터 이야기만)
+const LETTER = {
+  casual:{hi:n => `안녕, 나 ${josaOf(n, '이야', '야')}.`, week:'이번 주에 나는 {a}. 그리고 {b}.', like:'요즘은 {l} 좋아졌어.', pick:'공원에서 {p} 주워서 병에 넣었어.',
+    food2:'{n} 이야기를 자주 들었어. 나도 먹어 보고 싶어.', food1:'{n} 먹었다는 얘기, 아직 기억나.', move:'{t} 했다는 얘기 듣고 나도 따라 해 봤어.',
+    good:'좋았다고 말해 준 날, 나도 같이 좋았어.', hard:'힘들다고 말해 준 날도 있었지. 말해 줘서 고마워.', bye:'다음 주에도 여기 있을게.', open:'편지 썼어! 읽어 줄래?', ok:'잘 읽었어'},
+  polite:{hi:n => `${josaOf(n, '이에요', '예요')}.`, week:'이번 주에 저는 {a}. 그리고 {b}.', like:'요즘은 {l} 좋아졌어요.', pick:'공원에서 {p} 주워서 병에 넣었어요.',
+    food2:'{n} 이야기를 자주 들었어요. 저도 먹어 보고 싶어요.', food1:'{n} 먹었다는 얘기, 아직 기억나요.', move:'{t} 했다는 얘기 듣고 저도 따라 해 봤어요.',
+    good:'좋았다고 말해 준 날, 저도 같이 좋았어요.', hard:'힘들다고 말해 준 날도 있었죠. 말해 줘서 고마워요.', bye:'다음 주에도 여기 있을게요.', open:'편지를 써 봤어요. 읽어 줄래요?', ok:'잘 읽었어요'},
+};
+// 첫눈 (그 겨울 처음 눈 온 날, 실제 날씨)
+const FIRST_SNOW = {casual:'첫눈이다! 우리 첫눈 같이 봤다!', polite:'첫눈이에요. 같이 봐서 좋아요'};
+// 친구 캐릭터가 내 방에 놀러 옴. {n} = 친구 이름 + 이/가
+const GUEST_TALK = {casual:{here:'{n} 놀러 왔어!', first:'{n} 처음으로 우리 방에 놀러 왔어!'}, polite:{here:'{n} 놀러 왔어요', first:'{n} 처음으로 우리 방에 놀러 왔어요'}};
+const josaOf = (w, a, b) => { const c = w.charCodeAt(w.length - 1) - 0xAC00; return w + (c >= 0 && c % 28 ? a : b); };   // 받침 있으면 a

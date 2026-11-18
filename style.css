@@ -309,7 +309,7 @@ dialog{background:var(--bg);border:2px solid var(--ink);border-bottom:0}
 .scene{flex:none;height:auto;min-height:0;aspect-ratio:100/122;width:min(100%,calc((100dvh - 290px)*.82));margin:0 auto;background:#FFF3D6}
 .actor{width:20cqw}
 .bubble{top:calc(var(--y)*1cqh - 27cqw)}
-.is-lying ~ .bubble{top:calc(var(--y)*1cqh - 18cqw)}
+.is-lying ~ .bubble:not(#guestBubble){top:calc(var(--y)*1cqh - 18cqw)}
 .held{left:62%;top:60%;width:35%}
 .note{width:9cqw}
 .char .av{animation:pxbob 2.4s steps(1) infinite}
@@ -350,7 +350,7 @@ dialog{background:var(--bg);border:2px solid var(--ink);border-bottom:0}
 
 /* 홈: 기록 칸은 방 바로 아래 (말풍선 질문과 이어지게) */
 /* 나가 있을 땐 말풍선이 쪽지 위에 */
-.actor[hidden] ~ .bubble{top:calc(78cqh - 3cqw)}
+.actor[hidden] ~ .bubble:not(#guestBubble){top:calc(78cqh - 3cqw)}
 .cal-edit{margin-top:12px;width:100%}
 
 /* ── 대화창 (chat.js): 방 아래를 채우고, 기록만 스크롤 ── */
@@ -446,3 +446,10 @@ dialog{background:var(--bg);border:2px solid var(--ink);border-bottom:0}
 .toast{top:auto;bottom:max(96px,calc(env(safe-area-inset-bottom) + 88px));padding:10px 14px;border:2px solid #3B2A20;border-radius:4px;box-shadow:2px 2px 0 rgba(59,42,32,.35);font-size:14px;color:#3B2A20}
 dialog .toast{position:absolute;bottom:24px}   /* 열린 창 안에서는 그 창의 아래쪽 */
 .msg--sys{align-self:center;max-width:90%;padding:4px 10px;border:0;border-radius:10px;background:#FFF3D6;box-shadow:none;font-size:12px;color:var(--text-2);text-align:center}   /* 안내 줄 (토스트 대신) */
+.bubble__go{display:block;margin-top:2px;font-size:10px;font-weight:700;opacity:.75}   /* 말풍선을 누르면 갈 곳 */
+/* 편지 (letter.js) */
+.letter{margin-top:-4px;padding:16px;border:2px dashed #C9A86A;border-radius:4px;background:#FFFBEF;font-family:'Galmuri11','IBM Plex Sans KR',sans-serif;font-size:13px;line-height:1.8;color:#3B2A20}
+.letter p{margin:0 0 6px}
+.letter .sub{margin-bottom:10px}
+.letter__sign{text-align:right}
+#guest .char{padding:0;border:0;background:none;cursor:pointer}

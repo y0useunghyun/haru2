@@ -148,7 +148,7 @@ function drawBoard(){
   $('boardBody').innerHTML = `<p class="life" style="margin-top:0">${news[hash(TODAY) % news.length]}</p>
     <p class="sec">마을 소식</p>
     ${feed.length ? feed.map(x => `<div class="row"><div class="row__h"><span>${x.who}</span><span class="num">${x.date === TODAY ? '오늘' : fmtDay(x.date)}</span></div><p class="sub"><b>${x.text}</b></p></div>`).join('')
-      : '<p class="sub">친구와 서로 방 코드를 넣으면 캐릭터끼리 만나요</p>'}`;
+      : '<p class="sub">친구 코드를 넣어 친구가 되면 캐릭터끼리 만나요</p>'}`;
 }
 
 // ── 친구 방 ──

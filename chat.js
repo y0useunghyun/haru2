@@ -25,13 +25,14 @@ function chatAsk(){
   chatPush(false, q.t);
 }
 function drawChat(){
-  const log = $('chatLog'), html = chat.map(m => `<p class="msg ${m.me ? 'msg--me' : ''} ${m.go === 'sys' ? 'msg--sys' : ''}">${esc(m.t)}${m.go === 'park' ? '<button type="button" class="msg__go" data-go="park">공원 가기 ›</button>' : ''}${m.go?.startsWith('play:') && typeof playButtons === 'function' ? playButtons(m) : ''}</p>${undo?.id === m.id ? '<button type="button" class="msg__undo" data-undo>되돌리기</button>' : ''}`).join('');
+  const log = $('chatLog'), html = chat.map(m => `<p class="msg ${m.me ? 'msg--me' : ''} ${m.go === 'sys' ? 'msg--sys' : ''}">${esc(m.t)}${m.go === 'park' ? '<button type="button" class="msg__go" data-go="park">공원 가기 ›</button>' : ''}${m.go === 'letter' ? '<button type="button" class="msg__go" data-go="letter">편지 읽기 ›</button>' : ''}${m.go?.startsWith('play:') && typeof playButtons === 'function' ? playButtons(m) : ''}</p>${undo?.id === m.id ? '<button type="button" class="msg__undo" data-undo>되돌리기</button>' : ''}`).join('');
   if (log.innerHTML !== html){ log.innerHTML = html; log.scrollTop = log.scrollHeight; }
   const still = openAsk && askNow()?.kind === openAsk;
   $('sayInput').placeholder = still ? HINT[openAsk] : `${state.name || '캐릭터'}에게 말해 주기…`;
 }
 $('chatLog').onclick = e => {
   if (e.target.closest('[data-go="park"]')) return openPark();
+  if (e.target.closest('[data-go="letter"]')) return openLetter();   // letter.js
   if (!e.target.closest('[data-undo]') || !undo) return;
   reactionTimers.forEach(clearTimeout);   // 아직 안 한 대답도 취소
   setToday(undo.before);
@@ -46,9 +47,11 @@ const askAfter = ms => setTimeout(chatAsk, ms + ASK_NEXT_MS);
 // 홈이 준비되면(첫 시작·복귀 화면 다음) 인사 또는 질문으로 시작
 document.addEventListener('haru:ready', () => {
   if (chat.length) return;
+  const recall = state.recallDay !== TODAY ? recallLine(state, TODAY, register()) : null;   // 다시 오면: 지난번 말을 기억하고 먼저 꺼냄 (life.js)
+  if (recall){ state = {...state, recallDay:TODAY}; chatPush(false, recall); say(recall); window.clarity?.('event', 'recall'); }
   const q = askNow();
-  if (q) chatAsk();
-  else chatPush(false, pick(lines().hello[timeOf(hourNow())]));
+  if (q) return recall ? setTimeout(chatAsk, ASK_NEXT_MS) : chatAsk();
+  if (!recall) chatPush(false, pick(lines().hello[timeOf(hourNow())]));
 });
 
 // 잡담: 기록이 아닌 말에 캐릭터가 대답 (talk.js 의 CHITCHAT)
